@@ -11,6 +11,13 @@
     <header class="host-header">
       <h1>🎛️ Host Dashboard</h1>
       <div class="host-controls">
+        <label class="difficulty-label" for="difficultySelect">Difficulty
+          <select id="difficultySelect">
+            <option value="easy">Easy (1 digit)</option>
+            <option value="medium">Medium (mix of 1 &amp; 2 digit)</option>
+            <option value="hard">Hardest (2 digit)</option>
+          </select>
+        </label>
         <button id="armBtn" class="btn btn-primary">Start / Next Round</button>
         <button id="resetRoundBtn" class="btn">Reset Round</button>
         <button id="resetAllBtn" class="btn btn-danger">Reset Everything</button>

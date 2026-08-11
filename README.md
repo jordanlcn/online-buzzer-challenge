@@ -30,11 +30,15 @@ instead of localhost.
 - **Low latency transport**: uses Socket.IO (WebSockets), so buzzes are pushed
   instantly instead of relying on polling.
 - **Math confirmation**: the moment a buzz is registered, that player gets a
-  up-to-two-digit `+`/`-` equation (e.g. `47 - 6 = ?`) and has 6 seconds to answer.
-  If they get it wrong or time out, they're marked eliminated for that round
-  and the *next* person in the server-timestamp queue is immediately given
-  their own equation — this repeats until someone answers correctly (they win
-  the round) or the queue runs out.
+  `+`/`-` equation and has 6 seconds to answer. If they get it wrong or time
+  out, they're marked eliminated for that round and the *next* person in the
+  server-timestamp queue is immediately given their own equation — this
+  repeats until someone answers correctly (they win the round) or the queue
+  runs out.
+- **Difficulty control** (host dashboard): pick *Easy* (both numbers single-digit,
+  0-9), *Medium* (each number independently single- or two-digit, so equations
+  mix), or *Hardest* (both numbers two-digit, 10-99). Takes effect on the next
+  equation issued; persists across round resets until changed again.
 - **Live ping display**: each player page shows its own round-trip ping to
   the server. This is informational only (visible on the host dashboard too)
   and does not affect who is judged first — see fairness note above.

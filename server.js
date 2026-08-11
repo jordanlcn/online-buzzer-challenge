@@ -42,9 +42,22 @@ let round = {
 
 let equationSeq = 1;
 
-function makeEquation() {
-  const a = Math.floor(Math.random() * 100); // up to two digits, 0-99
-  const b = Math.floor(Math.random() * 100); // up to two digits, 0-99
+const DIFFICULTIES = ['easy', 'medium', 'hard'];
+let difficulty = 'medium';
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randOperand(diff) {
+  if (diff === 'easy') return randInt(0, 9); // always single digit
+  if (diff === 'hard') return randInt(10, 99); // always two digits
+  return Math.random() < 0.5 ? randInt(0, 9) : randInt(10, 99); // medium: mix of both
+}
+
+function makeEquation(diff) {
+  const a = randOperand(diff);
+  const b = randOperand(diff);
   const op = Math.random() < 0.5 ? '+' : '-';
   const answer = op === '+' ? a + b : a - b;
   return { id: String(equationSeq++), a, b, op, answer };
@@ -82,6 +95,7 @@ function broadcastState() {
   });
   io.to('host-room').emit('leaderboard:update', leaderboard());
   io.to('host-room').emit('latency:update', [...latencyByName.entries()]);
+  io.to('host-room').emit('difficulty:update', difficulty);
 }
 
 function clearRound() {
@@ -96,7 +110,7 @@ function currentChallenger() {
 }
 
 function issueChallenge(entry) {
-  entry.equation = makeEquation();
+  entry.equation = makeEquation(difficulty);
   entry.status = 'pending';
   entry.deadline = Date.now() + MATH_TIMEOUT_MS;
   const socket = io.sockets.sockets.get(entry.socketId);
@@ -160,6 +174,14 @@ io.on('connection', (socket) => {
     });
     socket.emit('leaderboard:update', leaderboard());
     socket.emit('latency:update', [...latencyByName.entries()]);
+    socket.emit('difficulty:update', difficulty);
+  });
+
+  socket.on('host:setDifficulty', (level) => {
+    if (DIFFICULTIES.includes(level)) {
+      difficulty = level;
+      broadcastState();
+    }
   });
 
   socket.on('host:arm', () => {

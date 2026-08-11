@@ -1,5 +1,6 @@
 const socket = io();
 
+const difficultySelect = document.getElementById('difficultySelect');
 const armBtn = document.getElementById('armBtn');
 const resetRoundBtn = document.getElementById('resetRoundBtn');
 const resetAllBtn = document.getElementById('resetAllBtn');
@@ -10,6 +11,8 @@ const leaderboardBody = document.getElementById('leaderboardBody');
 let latestLatency = new Map();
 
 socket.on('connect', () => socket.emit('host:join'));
+
+difficultySelect.addEventListener('change', () => socket.emit('host:setDifficulty', difficultySelect.value));
 
 armBtn.addEventListener('click', () => socket.emit('host:arm'));
 resetRoundBtn.addEventListener('click', () => socket.emit('host:resetRound'));
@@ -48,6 +51,10 @@ socket.on('leaderboard:update', (rows) => {
 
 socket.on('latency:update', (entries) => {
   latestLatency = new Map(entries);
+});
+
+socket.on('difficulty:update', (level) => {
+  difficultySelect.value = level;
 });
 
 function escapeHtml(str) {

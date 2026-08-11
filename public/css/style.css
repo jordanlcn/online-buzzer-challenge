@@ -153,7 +153,26 @@ hr { border: none; border-top: 1px solid #334155; margin: 20px 0; }
 /* ----- Host page ----- */
 .host-page { padding: 24px; max-width: 1000px; margin: 0 auto; }
 .host-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-.host-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+.host-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.difficulty-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--muted);
+  background: var(--card);
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+.difficulty-label select {
+  background: #0b1220;
+  color: var(--text);
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 14px;
+}
 .btn { background: #334155; }
 .btn-primary { background: var(--green); }
 .btn-danger { background: var(--accent); }
