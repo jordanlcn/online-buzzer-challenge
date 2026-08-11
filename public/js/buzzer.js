@@ -56,7 +56,7 @@ socket.on('latency:pong', (sentAt) => {
   socket.emit('latency:report', rtt);
 });
 
-const MAX_BUZZERS_PER_ROUND = 5; // matches server.js MAX_BUZZERS_PER_ROUND
+const MAX_WINNERS_PER_ROUND = 5; // matches server.js MAX_WINNERS_PER_ROUND
 
 buzzBtn.addEventListener('click', () => {
   if (buzzBtn.disabled) return;
@@ -74,15 +74,16 @@ socket.on('state:update', ({ armed, winner, queue }) => {
     hasBuzzedThisRound = false; // fresh round started by host
   }
 
-  const full = queue.length >= MAX_BUZZERS_PER_ROUND;
+  const correctCount = queue.filter((e) => e.status === 'correct').length;
+  const full = correctCount >= MAX_WINNERS_PER_ROUND;
 
   if (winner) {
-    const suffix = armed && !full ? ` — buzzer still open (${queue.length}/${MAX_BUZZERS_PER_ROUND})` : '';
+    const suffix = armed && !full ? ` — buzzer still open (${correctCount}/${MAX_WINNERS_PER_ROUND} correct so far)` : '';
     statusBanner.textContent = `🏆 ${winner} answered first!${suffix}`;
     statusBanner.className = 'status-banner status-winner';
   } else if (armed) {
     statusBanner.textContent = full
-      ? `Buzzer full (${MAX_BUZZERS_PER_ROUND}/${MAX_BUZZERS_PER_ROUND}) — solving in progress...`
+      ? `${MAX_WINNERS_PER_ROUND}/${MAX_WINNERS_PER_ROUND} correct — buzzer closed for this round`
       : 'Buzzer is live - go!';
     statusBanner.className = 'status-banner status-armed';
   } else {
@@ -110,7 +111,8 @@ function renderQueue(queue) {
       entry.status === 'correct' ? ' ✅' :
       entry.status === 'wrong' ? ' ✗ wrong answer' :
       entry.status === 'timeout' ? ' ⏱ too slow' :
-      entry.status === 'pending' ? ' (solving...)' : ' (waiting)';
+      entry.status === 'pending' ? ' (solving...)' :
+      entry.status === 'skipped' ? ' (buzzer filled up)' : ' (waiting)';
     li.textContent = `${entry.name} - +${entry.msAfterFirst}ms${suffix}`;
     queueList.appendChild(li);
   });

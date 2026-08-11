@@ -42,15 +42,16 @@ instead of localhost.
   source of truth keeps it fair.
 - **Low latency transport**: uses Socket.IO (WebSockets), so buzzes are pushed
   instantly instead of relying on polling.
-- **Math confirmation, top 5 buzzers**: up to 5 buzz-ins are accepted per round
-  (`MAX_BUZZERS_PER_ROUND` in `server.js`) — a 6th buzz attempt is rejected outright.
-  Each of the 5, in server-timestamp order, gets their own `+`/`-` equation with 6
-  seconds to answer, one at a time. Answering correctly does **not** end the round
-  or block the rest of the queue — every one of the 5 still gets their own turn at
-  the math check regardless of earlier results. The *first* person to answer
+- **Math confirmation, open until 5 correct answers**: the buzzer stays open —
+  any number of players can buzz in — until 5 players have answered their math
+  challenge *correctly* (`MAX_WINNERS_PER_ROUND` in `server.js`). Buzzers are
+  challenged one at a time in server-timestamp order; wrong answers and timeouts
+  don't count against that target, so the queue keeps cascading through as many
+  buzzers as it takes to find 5 correct answers. The *first* person to answer
   correctly is recorded as the round's winner (shown in the banner and credited a
-  win on the leaderboard); everyone else's individual correct/wrong/timeout result
-  still shows in the buzz order.
+  win on the leaderboard). Once the 5th correct answer lands, any players who had
+  already buzzed but hadn't gotten their turn yet are marked "skipped," and any
+  brand-new buzz attempt after that point is rejected outright.
 - **Difficulty control** (host dashboard): pick *Easy* (both numbers single-digit,
   0-9), *Medium* (each number independently single- or two-digit, so equations
   mix), or *Hardest* (both numbers two-digit, 10-99). Takes effect on the next

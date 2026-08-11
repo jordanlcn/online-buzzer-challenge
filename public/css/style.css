@@ -153,7 +153,7 @@ hr { border: none; border-top: 1px solid #334155; margin: 20px 0; }
 .queue-list { padding-left: 20px; }
 .queue-list li { margin-bottom: 6px; }
 .q-correct { color: var(--green); font-weight: 700; }
-.q-wrong, .q-timeout { color: var(--muted); text-decoration: line-through; }
+.q-wrong, .q-timeout, .q-skipped { color: var(--muted); text-decoration: line-through; }
 .q-pending { color: var(--yellow); font-weight: 700; }
 .q-waiting { color: var(--muted); }
 

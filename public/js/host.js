@@ -41,14 +41,15 @@ resetAllBtn.addEventListener('click', () => {
   }
 });
 
-const MAX_BUZZERS_PER_ROUND = 5; // matches server.js MAX_BUZZERS_PER_ROUND
+const MAX_WINNERS_PER_ROUND = 5; // matches server.js MAX_WINNERS_PER_ROUND
 
 socket.on('state:update', ({ armed, winner, queue }) => {
-  const slots = `${queue.length}/${MAX_BUZZERS_PER_ROUND} buzzed in`;
+  const correctCount = queue.filter((e) => e.status === 'correct').length;
+  const progress = `${correctCount}/${MAX_WINNERS_PER_ROUND} correct`;
   if (winner) {
-    roundStatus.textContent = `🏆 Winner: ${winner} (${slots})`;
+    roundStatus.textContent = `🏆 Winner: ${winner} (${progress})`;
   } else if (armed) {
-    roundStatus.textContent = queue.length === 0 ? 'Armed - waiting for first buzz...' : `Round in progress... (${slots})`;
+    roundStatus.textContent = queue.length === 0 ? 'Armed - waiting for first buzz...' : `Round in progress... (${progress})`;
   } else {
     roundStatus.textContent = 'Round not armed. Click "Start / Next Round" when ready.';
   }

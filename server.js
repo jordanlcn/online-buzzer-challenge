@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 const MATH_TIMEOUT_MS = 6000; // time a challenger has to answer the math check
 const ROOM_TTL_MS = 3 * 60 * 60 * 1000; // abandoned rooms are cleaned up after 3 hours
 const ROOM_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
-const MAX_BUZZERS_PER_ROUND = 5; // top 5 buzz-ins each get their own math challenge
+const MAX_WINNERS_PER_ROUND = 5; // buzzer stays open until 5 players answer correctly
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -136,6 +136,10 @@ function currentChallenger(room) {
   return room.round.queue.find((e) => e.status === 'pending');
 }
 
+function correctCount(room) {
+  return room.round.queue.filter((e) => e.status === 'correct').length;
+}
+
 function issueChallenge(room, entry) {
   entry.equation = makeEquation(room.difficulty);
   entry.status = 'pending';
@@ -154,9 +158,14 @@ function issueChallenge(room, entry) {
 }
 
 function advanceQueue(room) {
-  // Always keep going - the top MAX_BUZZERS_PER_ROUND buzzers each get their
-  // own turn at the math check, even after someone has already answered
-  // correctly.
+  if (correctCount(room) >= MAX_WINNERS_PER_ROUND) {
+    // Target reached - nobody still waiting gets a turn this round.
+    room.round.queue.forEach((e) => {
+      if (e.status === 'waiting') e.status = 'skipped';
+    });
+    broadcastState(room);
+    return;
+  }
   const next = room.round.queue.find((e) => e.status === 'waiting');
   if (next) issueChallenge(room, next);
   broadcastState(room);
@@ -313,7 +322,7 @@ io.on('connection', (socket) => {
     if (!player) return;
     if (!room.round.armed) return; // buzzer not live
     if (room.round.queue.some((e) => e.socketId === socket.id)) return; // one buzz per round per player
-    if (room.round.queue.length >= MAX_BUZZERS_PER_ROUND) {
+    if (correctCount(room) >= MAX_WINNERS_PER_ROUND) {
       socket.emit('buzz:rejected', { reason: 'full' });
       return;
     }
