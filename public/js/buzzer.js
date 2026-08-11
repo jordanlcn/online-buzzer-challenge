@@ -56,6 +56,8 @@ socket.on('latency:pong', (sentAt) => {
   socket.emit('latency:report', rtt);
 });
 
+const MAX_BUZZERS_PER_ROUND = 5; // matches server.js MAX_BUZZERS_PER_ROUND
+
 buzzBtn.addEventListener('click', () => {
   if (buzzBtn.disabled) return;
   hasBuzzedThisRound = true;
@@ -63,23 +65,32 @@ buzzBtn.addEventListener('click', () => {
   socket.emit('buzz');
 });
 
+socket.on('buzz:rejected', () => {
+  buzzBtn.disabled = true;
+});
+
 socket.on('state:update', ({ armed, winner, queue }) => {
   if (armed && queue.length === 0) {
     hasBuzzedThisRound = false; // fresh round started by host
   }
 
+  const full = queue.length >= MAX_BUZZERS_PER_ROUND;
+
   if (winner) {
-    statusBanner.textContent = `🏆 ${winner} buzzed in first!`;
+    const suffix = armed && !full ? ` — buzzer still open (${queue.length}/${MAX_BUZZERS_PER_ROUND})` : '';
+    statusBanner.textContent = `🏆 ${winner} answered first!${suffix}`;
     statusBanner.className = 'status-banner status-winner';
   } else if (armed) {
-    statusBanner.textContent = 'Buzzer is live - go!';
+    statusBanner.textContent = full
+      ? `Buzzer full (${MAX_BUZZERS_PER_ROUND}/${MAX_BUZZERS_PER_ROUND}) — solving in progress...`
+      : 'Buzzer is live - go!';
     statusBanner.className = 'status-banner status-armed';
   } else {
     statusBanner.textContent = 'Waiting for host to start the round...';
     statusBanner.className = 'status-banner status-waiting';
   }
 
-  buzzBtn.disabled = !armed || !!winner || hasBuzzedThisRound;
+  buzzBtn.disabled = !armed || hasBuzzedThisRound || full;
 
   // If we no longer have a pending entry in the queue, close any open math overlay.
   const mine = queue.find((e) => e.name === name);

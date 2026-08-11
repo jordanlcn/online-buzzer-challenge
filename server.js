@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 3000;
 const MATH_TIMEOUT_MS = 6000; // time a challenger has to answer the math check
 const ROOM_TTL_MS = 3 * 60 * 60 * 1000; // abandoned rooms are cleaned up after 3 hours
 const ROOM_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
+const MAX_BUZZERS_PER_ROUND = 5; // top 5 buzz-ins each get their own math challenge
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -153,7 +154,9 @@ function issueChallenge(room, entry) {
 }
 
 function advanceQueue(room) {
-  if (room.round.winner) return;
+  // Always keep going - the top MAX_BUZZERS_PER_ROUND buzzers each get their
+  // own turn at the math check, even after someone has already answered
+  // correctly.
   const next = room.round.queue.find((e) => e.status === 'waiting');
   if (next) issueChallenge(room, next);
   broadcastState(room);
@@ -171,15 +174,13 @@ function resolveChallenge(room, entry, submittedAnswer) {
 
   if (correct) {
     entry.status = 'correct';
-    room.round.winner = entry.name;
-    room.round.armed = false;
+    if (!room.round.winner) room.round.winner = entry.name; // first correct answer is the round's winner
     stats.wins += 1;
   } else {
     entry.status = submittedAnswer === null ? 'timeout' : 'wrong';
     stats.misses += 1;
-    advanceQueue(room);
   }
-  broadcastState(room);
+  advanceQueue(room); // give the next queued buzzer their own challenge regardless of outcome
 }
 
 function getHostRoom(socket) {
@@ -311,8 +312,11 @@ io.on('connection', (socket) => {
     const player = room.players.get(socket.id);
     if (!player) return;
     if (!room.round.armed) return; // buzzer not live
-    if (room.round.winner) return; // round already decided
     if (room.round.queue.some((e) => e.socketId === socket.id)) return; // one buzz per round per player
+    if (room.round.queue.length >= MAX_BUZZERS_PER_ROUND) {
+      socket.emit('buzz:rejected', { reason: 'full' });
+      return;
+    }
 
     const serverTime = Date.now(); // <-- the fair, authoritative timestamp
     const entry = {
