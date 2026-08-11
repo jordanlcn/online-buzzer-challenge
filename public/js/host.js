@@ -1,5 +1,7 @@
 const socket = io();
 
+const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+const rerollBtn = document.getElementById('rerollBtn');
 const difficultySelect = document.getElementById('difficultySelect');
 const armBtn = document.getElementById('armBtn');
 const resetRoundBtn = document.getElementById('resetRoundBtn');
@@ -10,7 +12,24 @@ const leaderboardBody = document.getElementById('leaderboardBody');
 
 let latestLatency = new Map();
 
-socket.on('connect', () => socket.emit('host:join'));
+socket.on('connect', () => socket.emit('host:createRoom'));
+
+socket.on('room:created', ({ code }) => {
+  roomCodeDisplay.textContent = code;
+});
+
+socket.on('room:code', ({ code }) => {
+  roomCodeDisplay.textContent = code;
+});
+
+socket.on('room:closed', ({ reason }) => {
+  if (reason === 'inactive_timeout') {
+    alert('This room was closed for being idle too long. Starting a new one.');
+    socket.emit('host:createRoom');
+  }
+});
+
+rerollBtn.addEventListener('click', () => socket.emit('host:rerollCode'));
 
 difficultySelect.addEventListener('change', () => socket.emit('host:setDifficulty', difficultySelect.value));
 

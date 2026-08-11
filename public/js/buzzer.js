@@ -1,11 +1,13 @@
 const name = sessionStorage.getItem('buzzer_name');
-if (!name) {
+const roomCode = sessionStorage.getItem('buzzer_code');
+if (!name || !roomCode) {
   window.location.href = 'index.html';
 }
 
 const socket = io();
 
 const playerNameEl = document.getElementById('playerName');
+const roomCodePill = document.getElementById('roomCodePill');
 const pingPill = document.getElementById('pingPill');
 const statusBanner = document.getElementById('statusBanner');
 const buzzBtn = document.getElementById('buzzBtn');
@@ -21,11 +23,25 @@ let currentEquationId = null;
 let timerBarEl = null;
 
 socket.on('connect', () => {
-  socket.emit('register', { name });
+  socket.emit('player:joinRoom', { code: roomCode, name });
 });
 
-socket.on('registered', ({ name: confirmedName }) => {
+socket.on('registered', ({ name: confirmedName, code }) => {
   playerNameEl.textContent = confirmedName;
+  roomCodePill.textContent = `room: ${code}`;
+});
+
+socket.on('room:error', ({ message }) => {
+  alert(message);
+  sessionStorage.removeItem('buzzer_code');
+  window.location.href = 'index.html';
+});
+
+socket.on('room:closed', () => {
+  alert('The host has closed the room.');
+  sessionStorage.removeItem('buzzer_name');
+  sessionStorage.removeItem('buzzer_code');
+  window.location.href = 'index.html';
 });
 
 // --- latency probe: purely informational, does NOT affect buzz ordering ---

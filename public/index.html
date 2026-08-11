@@ -10,8 +10,9 @@
   <main class="center-page">
     <div class="card">
       <h1>🔔 Online Buzzer</h1>
-      <p class="subtitle">Enter your name to join as a player.</p>
+      <p class="subtitle">Enter the room code and your name to join.</p>
       <form id="joinForm">
+        <input id="codeInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="6-digit room code" autocomplete="off" required />
         <input id="nameInput" type="text" maxlength="24" placeholder="Your name" autocomplete="off" required />
         <button type="submit">Join as Player</button>
       </form>
@@ -23,16 +24,23 @@
   </main>
   <script>
     const form = document.getElementById('joinForm');
-    const input = document.getElementById('nameInput');
+    const codeInput = document.getElementById('codeInput');
+    const nameInput = document.getElementById('nameInput');
     const error = document.getElementById('error');
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const name = input.value.trim();
+      const name = nameInput.value.trim();
+      const code = codeInput.value.trim();
       if (!name) {
         error.textContent = 'Please enter a name.';
         return;
       }
+      if (!/^\d{6}$/.test(code)) {
+        error.textContent = 'Room code must be 6 digits.';
+        return;
+      }
       sessionStorage.setItem('buzzer_name', name);
+      sessionStorage.setItem('buzzer_code', code);
       window.location.href = 'buzzer.html';
     });
   </script>

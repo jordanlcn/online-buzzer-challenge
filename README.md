@@ -11,15 +11,28 @@ npm start
 ```
 
 Then open:
-- `http://localhost:3000/` — players register their name here
-- `http://localhost:3000/host.html` — host dashboard (don't share this link with players)
+- `http://localhost:3000/host.html` — host dashboard, generates a room code
+- `http://localhost:3000/` — players enter the room code and their name here
 
 For a LAN game (multiple devices), share `http://<your-computer-ip>:3000/` with players
 instead of localhost.
 
 ## How it works
 
-- **Registration**: players enter a name on the landing page before they can buzz.
+- **Rooms**: opening the host dashboard always creates a fresh room with a random
+  6-digit code (host can click *New Code* to reroll it at any time before or during
+  a game — already-joined players aren't affected by a reroll, it only changes what
+  code new joiners need to type). Players must enter that code plus their name to
+  join. Multiple independent games can run at once, each isolated in its own room.
+- **If the host disconnects (closes the tab, refreshes, loses connection), the room
+  closes immediately** and every player in it gets an alert saying the host closed
+  the room, then gets sent back to the join screen. This means refreshing the host
+  dashboard starts a brand-new room/code — it isn't a "resume" button.
+- **Abandoned rooms** (no activity — no buzzes, resets, joins, etc. — for 3 hours)
+  are automatically cleaned up by a background sweep, even if a host tab is still
+  technically connected. This is a safety net; the normal cleanup path is the
+  immediate close on host disconnect above.
+- **Registration**: players enter a room code and name on the landing page before they can buzz.
 - **Fair ordering regardless of internet speed**: every buzz is timestamped the
   instant it *arrives* at the server (`Date.now()` inside the server's socket
   handler) — never using the client's own clock. This is the important bit:

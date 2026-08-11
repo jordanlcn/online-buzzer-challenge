@@ -153,6 +153,22 @@ hr { border: none; border-top: 1px solid #334155; margin: 20px 0; }
 /* ----- Host page ----- */
 .host-page { padding: 24px; max-width: 1000px; margin: 0 auto; }
 .host-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+
+.room-code-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  padding: 8px 14px;
+  border-radius: 10px;
+}
+.room-code-label { color: var(--muted); font-size: 14px; }
+.room-code-value {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: #38bdf8;
+}
 .host-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
 .difficulty-label {
