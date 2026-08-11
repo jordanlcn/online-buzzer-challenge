@@ -60,8 +60,11 @@ instead of localhost.
   the server. This is informational only (visible on the host dashboard too)
   and does not affect who is judged first — see fairness note above.
 - **Tracking**: the host dashboard shows the live buzz-in order for the
-  current round (name, milliseconds behind the first buzz, math result) and
-  a persistent leaderboard (total buzzes, wins, misses) across rounds.
+  current round — name, milliseconds behind the first buzz, the exact equation
+  that player was given, what they actually typed in, and the resulting status
+  (correct/wrong/timeout/skipped) — plus a persistent leaderboard (total buzzes,
+  wins, misses) across rounds. The equation/answer detail is host-only and never
+  sent to players, so buzzing in doesn't leak anyone else's equation or answer.
 - **Reset controls** (host dashboard):
   - *Start / Next Round* — arms the buzzer for a new question, clears the
     current round's queue, keeps the leaderboard.

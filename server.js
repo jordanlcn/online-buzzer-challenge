@@ -114,6 +114,27 @@ function publicQueue(room) {
   }));
 }
 
+// Host-only view: includes the actual equation and what the player answered.
+// Deliberately not sent to players, so buzzing-in doesn't leak other players'
+// equations/answers to anyone watching their own browser's network traffic.
+function hostQueueDetail(room) {
+  const first = room.round.queue[0];
+  const baseTime = first ? first.serverTime : null;
+  return room.round.queue.map((entry, i) => ({
+    name: entry.name,
+    rank: i + 1,
+    status: entry.status,
+    msAfterFirst: baseTime === null ? 0 : entry.serverTime - baseTime,
+    equation: entry.equation ? `${entry.equation.a} ${entry.equation.op} ${entry.equation.b}` : null,
+    submittedAnswer:
+      entry.status === 'waiting' || entry.status === 'skipped' || entry.status === 'pending'
+        ? null
+        : entry.submittedAnswer === null || entry.submittedAnswer === undefined
+        ? '(no answer)'
+        : String(entry.submittedAnswer),
+  }));
+}
+
 function broadcastState(room) {
   io.to(roomChannel(room.sessionId)).emit('state:update', {
     armed: room.round.armed,
@@ -123,6 +144,7 @@ function broadcastState(room) {
   io.to(hostChannel(room.sessionId)).emit('leaderboard:update', leaderboard(room));
   io.to(hostChannel(room.sessionId)).emit('latency:update', [...room.latencyByName.entries()]);
   io.to(hostChannel(room.sessionId)).emit('difficulty:update', room.difficulty);
+  io.to(hostChannel(room.sessionId)).emit('queue:detail', hostQueueDetail(room));
 }
 
 function clearRound(room) {
@@ -174,6 +196,8 @@ function advanceQueue(room) {
 function resolveChallenge(room, entry, submittedAnswer) {
   if (entry.status !== 'pending') return; // already resolved
   if (entry.timer) clearTimeout(entry.timer);
+
+  entry.submittedAnswer = submittedAnswer === undefined ? null : submittedAnswer;
 
   const stats = getStats(room, entry.name);
   const correct =

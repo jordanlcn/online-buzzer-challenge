@@ -53,11 +53,15 @@ socket.on('state:update', ({ armed, winner, queue }) => {
   } else {
     roundStatus.textContent = 'Round not armed. Click "Start / Next Round" when ready.';
   }
+});
 
+socket.on('queue:detail', (queue) => {
   hostQueueBody.innerHTML = '';
   queue.forEach((entry) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${entry.rank}</td><td>${escapeHtml(entry.name)}</td><td>+${entry.msAfterFirst}ms</td><td>${entry.status}</td>`;
+    const equation = entry.equation ?? '-';
+    const answer = entry.submittedAnswer ?? '-';
+    tr.innerHTML = `<td>${entry.rank}</td><td>${escapeHtml(entry.name)}</td><td>+${entry.msAfterFirst}ms</td><td>${escapeHtml(equation)}</td><td>${escapeHtml(answer)}</td><td>${entry.status}</td>`;
     hostQueueBody.appendChild(tr);
   });
 });
