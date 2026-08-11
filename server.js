@@ -43,8 +43,8 @@ let round = {
 let equationSeq = 1;
 
 function makeEquation() {
-  const a = Math.floor(Math.random() * 10); // single digit 0-9
-  const b = Math.floor(Math.random() * 10); // single digit 0-9
+  const a = Math.floor(Math.random() * 100); // up to two digits, 0-99
+  const b = Math.floor(Math.random() * 100); // up to two digits, 0-99
   const op = Math.random() < 0.5 ? '+' : '-';
   const answer = op === '+' ? a + b : a - b;
   return { id: String(equationSeq++), a, b, op, answer };

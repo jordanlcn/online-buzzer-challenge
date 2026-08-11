@@ -30,7 +30,7 @@ instead of localhost.
 - **Low latency transport**: uses Socket.IO (WebSockets), so buzzes are pushed
   instantly instead of relying on polling.
 - **Math confirmation**: the moment a buzz is registered, that player gets a
-  single-digit `+`/`-` equation (e.g. `7 - 6 = ?`) and has 6 seconds to answer.
+  up-to-two-digit `+`/`-` equation (e.g. `47 - 6 = ?`) and has 6 seconds to answer.
   If they get it wrong or time out, they're marked eliminated for that round
   and the *next* person in the server-timestamp queue is immediately given
   their own equation — this repeats until someone answers correctly (they win
