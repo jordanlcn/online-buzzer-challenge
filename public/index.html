@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Online Buzzer - Join</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main class="center-page">
+    <div class="card">
+      <h1>🔔 Online Buzzer</h1>
+      <p class="subtitle">Enter your name to join as a player.</p>
+      <form id="joinForm">
+        <input id="nameInput" type="text" maxlength="24" placeholder="Your name" autocomplete="off" required />
+        <button type="submit">Join as Player</button>
+      </form>
+      <p id="error" class="error"></p>
+      <hr />
+      <p class="subtitle">Running the game?</p>
+      <a class="host-link" href="host.html">Open Host Dashboard →</a>
+    </div>
+  </main>
+  <script>
+    const form = document.getElementById('joinForm');
+    const input = document.getElementById('nameInput');
+    const error = document.getElementById('error');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = input.value.trim();
+      if (!name) {
+        error.textContent = 'Please enter a name.';
+        return;
+      }
+      sessionStorage.setItem('buzzer_name', name);
+      window.location.href = 'buzzer.html';
+    });
+  </script>
+</body>
+</html>

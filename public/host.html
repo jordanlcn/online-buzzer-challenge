@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Buzzer - Host Dashboard</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main class="host-page">
+    <header class="host-header">
+      <h1>🎛️ Host Dashboard</h1>
+      <div class="host-controls">
+        <button id="armBtn" class="btn btn-primary">Start / Next Round</button>
+        <button id="resetRoundBtn" class="btn">Reset Round</button>
+        <button id="resetAllBtn" class="btn btn-danger">Reset Everything</button>
+      </div>
+    </header>
+
+    <div id="roundStatus" class="round-status">Round not armed.</div>
+
+    <div class="host-columns">
+      <section class="panel">
+        <h2>Live Buzz Order (this round)</h2>
+        <table class="queue-table">
+          <thead>
+            <tr><th>#</th><th>Name</th><th>+ms after 1st</th><th>Status</th></tr>
+          </thead>
+          <tbody id="hostQueueBody"></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>Leaderboard (all rounds)</h2>
+        <table class="queue-table">
+          <thead>
+            <tr><th>Name</th><th>Wins</th><th>Total Buzzes</th><th>Misses</th><th>Ping</th></tr>
+          </thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/host.js"></script>
+</body>
+</html>

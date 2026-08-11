@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Online Buzzer</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main class="buzzer-page">
+    <header class="topbar">
+      <span id="playerName" class="pill"></span>
+      <span id="pingPill" class="pill pill-muted">ping: -- ms</span>
+    </header>
+
+    <div id="statusBanner" class="status-banner status-waiting">Waiting for host to start the round...</div>
+
+    <button id="buzzBtn" class="buzz-btn" disabled>BUZZ</button>
+
+    <div id="mathOverlay" class="overlay hidden">
+      <div class="math-card">
+        <p class="math-label">Quick! Solve to lock in your buzz:</p>
+        <p id="equationText" class="equation"></p>
+        <form id="answerForm">
+          <input id="answerInput" type="number" inputmode="numeric" autocomplete="off" required />
+          <button type="submit">Submit</button>
+        </form>
+        <div id="mathTimer" class="math-timer"></div>
+      </div>
+    </div>
+
+    <section class="queue-panel">
+      <h2>Buzz Order</h2>
+      <ol id="queueList" class="queue-list"></ol>
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/buzzer.js"></script>
+</body>
+</html>
