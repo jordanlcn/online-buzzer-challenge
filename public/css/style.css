@@ -133,7 +133,7 @@ hr { border: none; border-top: 1px solid #334155; margin: 20px 0; }
   justify-content: center;
   z-index: 10;
 }
-.overlay.hidden { display: none; }
+.hidden { display: none !important; }
 
 .math-card {
   background: var(--card);

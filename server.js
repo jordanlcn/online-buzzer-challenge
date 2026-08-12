@@ -11,10 +11,15 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
-const MATH_TIMEOUT_MS = 6000; // time a challenger has to answer the math check
 const ROOM_TTL_MS = 3 * 60 * 60 * 1000; // abandoned rooms are cleaned up after 3 hours
 const ROOM_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
 const MAX_WINNERS_PER_ROUND = 5; // buzzer stays open until 5 players answer correctly
+const MIN_TIME_LIMIT_SECONDS = 2;
+const MAX_TIME_LIMIT_SECONDS = 60;
+// Suggested math-check time limits shown as placeholder text on the host
+// dashboard, and used automatically whenever the host hasn't set a custom value.
+const SUGGESTED_SECONDS = { easy: 5, medium: 8, hard: 12 };
+const REQUIRED_COMPANY = 'five9'; // lightweight gate: only this company name is accepted for now
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -48,6 +53,9 @@ const hostSessions = new Map();
 
 /** @type {Map<string, string>} socket.id -> sessionId, for a player socket */
 const playerSessions = new Map();
+
+/** @type {Set<string>} socket.id of sockets that passed the company-name gate */
+const authorizedHosts = new Set();
 
 let equationSeq = 1;
 
@@ -125,13 +133,18 @@ function hostQueueDetail(room) {
     rank: i + 1,
     status: entry.status,
     msAfterFirst: baseTime === null ? 0 : entry.serverTime - baseTime,
-    equation: entry.equation ? `${entry.equation.a} ${entry.equation.op} ${entry.equation.b}` : null,
-    submittedAnswer:
-      entry.status === 'waiting' || entry.status === 'skipped' || entry.status === 'pending'
-        ? null
-        : entry.submittedAnswer === null || entry.submittedAnswer === undefined
-        ? '(no answer)'
-        : String(entry.submittedAnswer),
+    equation: !room.mathEnabled
+      ? 'N/A (math off)'
+      : entry.equation
+      ? `${entry.equation.a} ${entry.equation.op} ${entry.equation.b}`
+      : null,
+    submittedAnswer: !room.mathEnabled
+      ? 'N/A (math off)'
+      : entry.status === 'waiting' || entry.status === 'skipped' || entry.status === 'pending'
+      ? null
+      : entry.submittedAnswer === null || entry.submittedAnswer === undefined
+      ? '(no answer)'
+      : String(entry.submittedAnswer),
   }));
 }
 
@@ -145,6 +158,11 @@ function broadcastState(room) {
   io.to(hostChannel(room.sessionId)).emit('latency:update', [...room.latencyByName.entries()]);
   io.to(hostChannel(room.sessionId)).emit('difficulty:update', room.difficulty);
   io.to(hostChannel(room.sessionId)).emit('queue:detail', hostQueueDetail(room));
+  io.to(hostChannel(room.sessionId)).emit('settings:update', {
+    mathEnabled: room.mathEnabled,
+    timeLimitSeconds: room.timeLimitMs ? room.timeLimitMs / 1000 : null,
+    suggestedSeconds: SUGGESTED_SECONDS[room.difficulty],
+  });
 }
 
 function clearRound(room) {
@@ -162,10 +180,15 @@ function correctCount(room) {
   return room.round.queue.filter((e) => e.status === 'correct').length;
 }
 
+function effectiveTimeoutMs(room) {
+  return room.timeLimitMs || SUGGESTED_SECONDS[room.difficulty] * 1000;
+}
+
 function issueChallenge(room, entry) {
+  const timeoutMs = effectiveTimeoutMs(room);
   entry.equation = makeEquation(room.difficulty);
   entry.status = 'pending';
-  entry.deadline = Date.now() + MATH_TIMEOUT_MS;
+  entry.deadline = Date.now() + timeoutMs;
   const socket = io.sockets.sockets.get(entry.socketId);
   if (socket) {
     socket.emit('math:challenge', {
@@ -173,10 +196,10 @@ function issueChallenge(room, entry) {
       a: entry.equation.a,
       b: entry.equation.b,
       op: entry.equation.op,
-      timeoutMs: MATH_TIMEOUT_MS,
+      timeoutMs,
     });
   }
-  entry.timer = setTimeout(() => resolveChallenge(room, entry, null), MATH_TIMEOUT_MS + 150);
+  entry.timer = setTimeout(() => resolveChallenge(room, entry, null), timeoutMs + 150);
 }
 
 function advanceQueue(room) {
@@ -252,7 +275,17 @@ setInterval(() => {
 }, ROOM_SWEEP_INTERVAL_MS);
 
 io.on('connection', (socket) => {
+  socket.on('host:authenticate', ({ companyName }) => {
+    const ok = String(companyName || '').trim().toLowerCase() === REQUIRED_COMPANY;
+    if (ok) authorizedHosts.add(socket.id);
+    socket.emit('host:authenticated', { ok });
+  });
+
   socket.on('host:createRoom', () => {
+    if (!authorizedHosts.has(socket.id)) {
+      socket.emit('host:authenticated', { ok: false, message: 'Please enter your company name first.' });
+      return;
+    }
     const sessionId = crypto.randomUUID();
     const joinCode = generateJoinCode();
     const room = {
@@ -262,6 +295,8 @@ io.on('connection', (socket) => {
       statsByName: new Map(),
       latencyByName: new Map(),
       difficulty: 'medium',
+      mathEnabled: true,
+      timeLimitMs: null, // null = use the suggested time for the current difficulty
       round: { armed: false, queue: [], winner: null },
       createdAt: Date.now(),
       lastActivity: Date.now(),
@@ -306,6 +341,28 @@ io.on('connection', (socket) => {
     const room = getHostRoom(socket);
     if (!room || !DIFFICULTIES.includes(level)) return;
     room.difficulty = level;
+    touch(room);
+    broadcastState(room);
+  });
+
+  socket.on('host:setMathEnabled', (enabled) => {
+    const room = getHostRoom(socket);
+    if (!room) return;
+    room.mathEnabled = !!enabled;
+    touch(room);
+    broadcastState(room);
+  });
+
+  socket.on('host:setTimeLimit', ({ seconds } = {}) => {
+    const room = getHostRoom(socket);
+    if (!room) return;
+    if (seconds === null || seconds === undefined || seconds === '') {
+      room.timeLimitMs = null; // revert to the suggested time for the current difficulty
+    } else {
+      const n = Number(seconds);
+      if (!Number.isFinite(n)) return;
+      room.timeLimitMs = Math.min(MAX_TIME_LIMIT_SECONDS, Math.max(MIN_TIME_LIMIT_SECONDS, n)) * 1000;
+    }
     touch(room);
     broadcastState(room);
   });
@@ -359,10 +416,22 @@ io.on('connection', (socket) => {
       status: 'waiting',
     };
     room.round.queue.push(entry);
-    getStats(room, player.name).buzzCount += 1;
+    const stats = getStats(room, player.name);
+    stats.buzzCount += 1;
     touch(room);
 
-    if (!currentChallenger(room)) {
+    if (!room.mathEnabled) {
+      // No math check configured: buzzing in successfully IS the win.
+      entry.status = 'correct';
+      entry.submittedAnswer = null;
+      if (!room.round.winner) room.round.winner = entry.name;
+      stats.wins += 1;
+      if (correctCount(room) >= MAX_WINNERS_PER_ROUND) {
+        room.round.queue.forEach((e) => {
+          if (e.status === 'waiting') e.status = 'skipped';
+        });
+      }
+    } else if (!currentChallenger(room)) {
       // no one is currently mid-challenge - the earliest waiting buzz goes next
       issueChallenge(room, entry);
     }
@@ -393,6 +462,7 @@ io.on('connection', (socket) => {
   socket.on('latency:ping', (t) => socket.emit('latency:pong', t));
 
   socket.on('disconnect', () => {
+    authorizedHosts.delete(socket.id);
     const hostedSessionId = hostSessions.get(socket.id);
     if (hostedSessionId) {
       closeRoom(hostedSessionId, 'host_disconnected');

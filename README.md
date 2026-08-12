@@ -11,7 +11,8 @@ npm start
 ```
 
 Then open:
-- `http://localhost:3000/host.html` — host dashboard, generates a room code
+- `http://localhost:3000/host.html` — enter your company name to get in, then it
+  generates a room code
 - `http://localhost:3000/` — players enter the room code and their name here
 
 For a LAN game (multiple devices), share `http://<your-computer-ip>:3000/` with players
@@ -19,6 +20,27 @@ instead of localhost.
 
 ## How it works
 
+- **Company-name gate on the host dashboard**: before a host can create a room,
+  they must type a company name; only `Five9` (case-insensitive) is accepted right
+  now (`REQUIRED_COMPANY` in `server.js`). This is a lightweight gate, not real
+  auth — it's enforced server-side (rejecting `host:createRoom` from an
+  unauthenticated socket) so it can't be bypassed by editing the page, but there's
+  no password/account system behind it. Players never see this gate; only whoever
+  is running the host dashboard needs to pass it, since a room can't exist without
+  one. The cache in `sessionStorage` just avoids retyping it on a reconnect.
+- **Math Challenge on/off** (host dashboard): a checkbox that toggles whether
+  buzzing in requires solving an equation at all. When off, buzzing in
+  successfully *is* the win — no challenge is issued, the buzzer immediately
+  marks that player "correct," and the same top-5-correct cap still applies
+  (so it becomes "first 5 people to buzz win"). The host table shows
+  "N/A (math off)" in the Equation/Answer columns while it's off.
+- **Configurable time limit** (host dashboard, only relevant while Math Challenge
+  is on): a number input (2-60 seconds) for how long a buzzer has to answer their
+  equation. Leave it blank and the field's placeholder shows the suggested time
+  for the current difficulty (`SUGGESTED_SECONDS` in `server.js`: Easy 5s, Medium
+  8s, Hardest 12s) — that suggested value is what's actually used until the host
+  types a custom number. Changing difficulty while the field is blank updates the
+  placeholder/suggestion automatically.
 - **Rooms**: opening the host dashboard always creates a fresh room with a random
   6-digit code (host can click *New Code* to reroll it at any time before or during
   a game — already-joined players aren't affected by a reroll, it only changes what
@@ -74,8 +96,10 @@ instead of localhost.
 
 ## Notes / things to adjust if you extend this
 
-- The math-answer time limit is `MATH_TIMEOUT_MS` in `server.js` (currently 6000ms).
-- There's no authentication on `/host.html` — anyone with the link can control
-  the game. Fine for a trusted LAN/Zoom setting; add a passphrase check if
-  you need to lock it down.
+- The company-name gate (`REQUIRED_COMPANY` in `server.js`) is intentionally
+  simple — a single hardcoded accepted value, no accounts or passwords. Treat it
+  as "keep casual outsiders out for now," not real access control.
+- Suggested per-difficulty time limits live in `SUGGESTED_SECONDS` in `server.js`;
+  the host can always override with a custom value between `MIN_TIME_LIMIT_SECONDS`
+  and `MAX_TIME_LIMIT_SECONDS` (2-60s by default).
 - All state is in-memory; restarting the server clears players and scores.

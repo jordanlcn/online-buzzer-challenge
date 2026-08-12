@@ -7,7 +7,19 @@
 <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <main class="host-page">
+  <main id="authGate" class="center-page">
+    <div class="card">
+      <h1>🎛️ Host Access</h1>
+      <p class="subtitle">Enter your company name to open the host dashboard.</p>
+      <form id="authForm">
+        <input id="companyInput" type="text" maxlength="40" placeholder="Company name" autocomplete="off" required />
+        <button type="submit">Continue</button>
+      </form>
+      <p id="authError" class="error"></p>
+    </div>
+  </main>
+
+  <main id="dashboardContent" class="host-page hidden">
     <header class="host-header">
       <h1>🎛️ Host Dashboard</h1>
       <div class="room-code-box">
@@ -22,6 +34,12 @@
             <option value="medium">Medium (mix of 1 &amp; 2 digit)</option>
             <option value="hard">Hardest (2 digit)</option>
           </select>
+        </label>
+        <label class="difficulty-label" for="mathEnabledToggle">Math Challenge
+          <input id="mathEnabledToggle" type="checkbox" checked />
+        </label>
+        <label class="difficulty-label" for="timeLimitInput">Time Limit (sec)
+          <input id="timeLimitInput" type="number" min="2" max="60" step="1" placeholder="8" />
         </label>
         <button id="armBtn" class="btn btn-primary">Start / Next Round</button>
         <button id="resetRoundBtn" class="btn">Reset Round</button>

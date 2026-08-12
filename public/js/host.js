@@ -1,8 +1,16 @@
 const socket = io();
 
+const authGate = document.getElementById('authGate');
+const dashboardContent = document.getElementById('dashboardContent');
+const authForm = document.getElementById('authForm');
+const companyInput = document.getElementById('companyInput');
+const authError = document.getElementById('authError');
+
 const roomCodeDisplay = document.getElementById('roomCodeDisplay');
 const rerollBtn = document.getElementById('rerollBtn');
 const difficultySelect = document.getElementById('difficultySelect');
+const mathEnabledToggle = document.getElementById('mathEnabledToggle');
+const timeLimitInput = document.getElementById('timeLimitInput');
 const armBtn = document.getElementById('armBtn');
 const resetRoundBtn = document.getElementById('resetRoundBtn');
 const resetAllBtn = document.getElementById('resetAllBtn');
@@ -12,7 +20,31 @@ const leaderboardBody = document.getElementById('leaderboardBody');
 
 let latestLatency = new Map();
 
-socket.on('connect', () => socket.emit('host:createRoom'));
+// --- company-name gate ---
+// Lightweight access control: only hosts who type the right company name can
+// create a room. Cached in sessionStorage so a reconnect (not a full page
+// reload) doesn't force retyping it.
+socket.on('connect', () => {
+  const cached = sessionStorage.getItem('buzzer_company');
+  if (cached) socket.emit('host:authenticate', { companyName: cached });
+});
+
+authForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  socket.emit('host:authenticate', { companyName: companyInput.value.trim() });
+});
+
+socket.on('host:authenticated', ({ ok, message }) => {
+  if (ok) {
+    sessionStorage.setItem('buzzer_company', companyInput.value.trim() || sessionStorage.getItem('buzzer_company') || '');
+    authGate.classList.add('hidden');
+    dashboardContent.classList.remove('hidden');
+    authError.textContent = '';
+    socket.emit('host:createRoom');
+  } else {
+    authError.textContent = message || 'That company name was not recognized.';
+  }
+});
 
 socket.on('room:created', ({ code }) => {
   roomCodeDisplay.textContent = code;
@@ -32,6 +64,13 @@ socket.on('room:closed', ({ reason }) => {
 rerollBtn.addEventListener('click', () => socket.emit('host:rerollCode'));
 
 difficultySelect.addEventListener('change', () => socket.emit('host:setDifficulty', difficultySelect.value));
+
+mathEnabledToggle.addEventListener('change', () => socket.emit('host:setMathEnabled', mathEnabledToggle.checked));
+
+timeLimitInput.addEventListener('change', () => {
+  const value = timeLimitInput.value.trim();
+  socket.emit('host:setTimeLimit', { seconds: value === '' ? null : Number(value) });
+});
 
 armBtn.addEventListener('click', () => socket.emit('host:arm'));
 resetRoundBtn.addEventListener('click', () => socket.emit('host:resetRound'));
@@ -82,6 +121,17 @@ socket.on('latency:update', (entries) => {
 
 socket.on('difficulty:update', (level) => {
   difficultySelect.value = level;
+});
+
+socket.on('settings:update', ({ mathEnabled, timeLimitSeconds, suggestedSeconds }) => {
+  mathEnabledToggle.checked = mathEnabled;
+  timeLimitInput.disabled = !mathEnabled;
+  timeLimitInput.placeholder = `${suggestedSeconds}s suggested`;
+  // Only overwrite what's typed if it doesn't already match (avoids cursor jumps while typing).
+  const shown = timeLimitSeconds === null ? '' : String(timeLimitSeconds);
+  if (document.activeElement !== timeLimitInput) {
+    timeLimitInput.value = shown;
+  }
 });
 
 function escapeHtml(str) {
