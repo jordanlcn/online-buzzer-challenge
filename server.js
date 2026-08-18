@@ -150,7 +150,16 @@ function broadcastState(room) {
     mathEnabled: room.mathEnabled,
     timeLimitSeconds: room.timeLimitMs ? room.timeLimitMs / 1000 : null,
     suggestedSeconds: SUGGESTED_SECONDS[room.difficulty],
+    showLiveStats: room.showLiveStats,
   });
+
+  // Live Stats is host-controlled and opt-in: players only get the leaderboard
+  // data while the host has it switched on, and get told to clear it the
+  // moment the host switches it back off.
+  io.to(roomChannel(room.sessionId)).emit('stats:visibility', room.showLiveStats);
+  if (room.showLiveStats) {
+    io.to(roomChannel(room.sessionId)).emit('stats:update', leaderboard(room));
+  }
 }
 
 function clearRound(room) {
@@ -285,6 +294,7 @@ io.on('connection', (socket) => {
       difficulty: 'medium',
       mathEnabled: true,
       timeLimitMs: null, // null = use the suggested time for the current difficulty
+      showLiveStats: false, // whether players can see the leaderboard on their own page
       round: { armed: false, queue: [], winner: null },
       createdAt: Date.now(),
       lastActivity: Date.now(),
@@ -337,6 +347,14 @@ io.on('connection', (socket) => {
     const room = getHostRoom(socket);
     if (!room) return;
     room.mathEnabled = !!enabled;
+    touch(room);
+    broadcastState(room);
+  });
+
+  socket.on('host:setShowLiveStats', (enabled) => {
+    const room = getHostRoom(socket);
+    if (!room) return;
+    room.showLiveStats = !!enabled;
     touch(room);
     broadcastState(room);
   });

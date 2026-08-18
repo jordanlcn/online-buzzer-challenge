@@ -11,6 +11,7 @@ const rerollBtn = document.getElementById('rerollBtn');
 const difficultySelect = document.getElementById('difficultySelect');
 const mathEnabledToggle = document.getElementById('mathEnabledToggle');
 const timeLimitInput = document.getElementById('timeLimitInput');
+const showLiveStatsToggle = document.getElementById('showLiveStatsToggle');
 const armBtn = document.getElementById('armBtn');
 const resetRoundBtn = document.getElementById('resetRoundBtn');
 const resetAllBtn = document.getElementById('resetAllBtn');
@@ -72,6 +73,8 @@ timeLimitInput.addEventListener('change', () => {
   socket.emit('host:setTimeLimit', { seconds: value === '' ? null : Number(value) });
 });
 
+showLiveStatsToggle.addEventListener('change', () => socket.emit('host:setShowLiveStats', showLiveStatsToggle.checked));
+
 armBtn.addEventListener('click', () => socket.emit('host:arm'));
 resetRoundBtn.addEventListener('click', () => socket.emit('host:resetRound'));
 resetAllBtn.addEventListener('click', () => {
@@ -121,10 +124,11 @@ socket.on('difficulty:update', (level) => {
   difficultySelect.value = level;
 });
 
-socket.on('settings:update', ({ mathEnabled, timeLimitSeconds, suggestedSeconds }) => {
+socket.on('settings:update', ({ mathEnabled, timeLimitSeconds, suggestedSeconds, showLiveStats }) => {
   mathEnabledToggle.checked = mathEnabled;
   timeLimitInput.disabled = !mathEnabled;
   timeLimitInput.placeholder = `${suggestedSeconds}s suggested`;
+  showLiveStatsToggle.checked = showLiveStats;
   // Only overwrite what's typed if it doesn't already match (avoids cursor jumps while typing).
   const shown = timeLimitSeconds === null ? '' : String(timeLimitSeconds);
   if (document.activeElement !== timeLimitInput) {

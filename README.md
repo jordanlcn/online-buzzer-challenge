@@ -88,7 +88,12 @@ instead of localhost.
   share with players because each buzzer gets their own independently-random
   equation (never reused), so seeing someone else's doesn't help you guess a
   future one. The host dashboard additionally has a persistent leaderboard
-  (total buzzes, wins, misses) across rounds, which stays host-only.
+  (total buzzes, wins, misses) across rounds.
+- **"Show Live Stats to Players" toggle** (host dashboard): off by default. When
+  the host switches it on, that same leaderboard (name, wins, total buzzes,
+  misses) also appears in a "Live Stats" panel on every player's own page,
+  updating in real time. Switching it back off immediately hides the panel and
+  clears it client-side for every player still connected.
 - **Reset controls** (host dashboard):
   - *Start / Next Round* — arms the buzzer for a new question, clears the
     current round's queue, keeps the leaderboard.

@@ -12,6 +12,8 @@ const pingPill = document.getElementById('pingPill');
 const statusBanner = document.getElementById('statusBanner');
 const buzzBtn = document.getElementById('buzzBtn');
 const queueBody = document.getElementById('queueBody');
+const statsPanel = document.getElementById('statsPanel');
+const statsBody = document.getElementById('statsBody');
 const mathOverlay = document.getElementById('mathOverlay');
 const equationText = document.getElementById('equationText');
 const answerForm = document.getElementById('answerForm');
@@ -119,6 +121,20 @@ function renderQueue(queue) {
     queueBody.appendChild(tr);
   });
 }
+
+socket.on('stats:visibility', (visible) => {
+  statsPanel.classList.toggle('hidden', !visible);
+  if (!visible) statsBody.innerHTML = '';
+});
+
+socket.on('stats:update', (rows) => {
+  statsBody.innerHTML = '';
+  rows.forEach((row) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(row.name)}</td><td>${row.wins}</td><td>${row.buzzCount}</td><td>${row.misses}</td>`;
+    statsBody.appendChild(tr);
+  });
+});
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({
