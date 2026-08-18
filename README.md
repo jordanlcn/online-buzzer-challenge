@@ -100,10 +100,13 @@ instead of localhost.
   no sound file needed) plays once whenever the buzzer transitions from not
   armed to armed, so players get an audible heads-up instead of having to
   watch the screen. It won't double-fire for a redundant re-arm while already
-  armed, and only fires again after a genuine reset-and-rearm. Browsers block
-  audio until a page has seen some interaction; this waits for the first tap,
-  click, or keypress to unlock it, which normally happens well before a round
-  actually starts (e.g. while typing a name on the join screen).
+  armed, and only fires again after a genuine reset-and-rearm. Every browser
+  keeps audio muted (and its clock frozen) until the page has seen a real
+  click/tap/keypress — if the buzzer goes live before that's happened, the
+  alert is deferred and fires the instant the player's first interaction
+  unlocks it, using a fresh clock rather than replaying something scheduled
+  while frozen (that mismatch is what caused garbled/delayed playback in
+  Firefox and silence in Edge in earlier testing).
 - **Tracking**: both the host dashboard and every player's own page show the same
   "Live Buzz Order" table for the current round — name, milliseconds behind the
   first buzz, the exact equation each buzzer was given, what they actually typed

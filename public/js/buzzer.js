@@ -40,11 +40,16 @@ let wasArmed = false;
 
 // --- audio alert when the buzzer goes live ---
 // Generated with the Web Audio API (no sound file to load/host). Browsers
-// block audio until the page has seen a user interaction, so the context is
-// created eagerly but only actually resumed once the player has tapped or
-// pressed something - by the time a round is armed there's usually been
-// plenty of opportunity for that (e.g. typing their name on the join page).
+// keep a fresh AudioContext "suspended" - and its clock frozen - until the
+// page sees a real user gesture. The bug to avoid: scheduling a tone against
+// a suspended context's currentTime, then resuming later, plays it back
+// garbled/late (Firefox) or drops it entirely (Edge/Chrome), because the
+// clock was frozen when the start/stop times were computed. The fix is to
+// never schedule against a non-running context - if it's not unlocked yet,
+// just remember to play the tone (with a fresh clock) the instant it does.
 let audioCtx = null;
+let pendingAlert = false;
+
 function getAudioCtx() {
   if (!audioCtx) {
     const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -52,17 +57,8 @@ function getAudioCtx() {
   }
   return audioCtx;
 }
-['pointerdown', 'keydown'].forEach((evt) => {
-  document.addEventListener(evt, () => {
-    const ctx = getAudioCtx();
-    if (ctx && ctx.state === 'suspended') ctx.resume();
-  }, { once: true });
-});
 
-function playBuzzerAlert() {
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-  if (ctx.state === 'suspended') ctx.resume();
+function playTone(ctx) {
   const now = ctx.currentTime;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -74,6 +70,34 @@ function playBuzzerAlert() {
   osc.connect(gain).connect(ctx.destination);
   osc.start(now);
   osc.stop(now + 0.3);
+}
+
+function unlockAudio() {
+  const ctx = getAudioCtx();
+  if (!ctx || ctx.state !== 'suspended') return;
+  ctx.resume().then(() => {
+    if (ctx.state === 'running' && pendingAlert) {
+      pendingAlert = false;
+      playTone(ctx);
+    }
+  }).catch(() => {});
+}
+['pointerdown', 'keydown'].forEach((evt) => {
+  document.addEventListener(evt, unlockAudio, { once: true });
+});
+
+function playBuzzerAlert() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  if (ctx.state === 'running') {
+    playTone(ctx);
+    return;
+  }
+  // Audio isn't unlocked yet (no gesture on this page so far) - flag it so
+  // the tone fires, with a fresh clock, the moment the player's first tap or
+  // keypress unlocks it, instead of scheduling now against a frozen clock.
+  pendingAlert = true;
+  unlockAudio();
 }
 
 // --- resilience for a dropped player connection ---
