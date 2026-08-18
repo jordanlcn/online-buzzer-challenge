@@ -16,6 +16,10 @@ const armBtn = document.getElementById('armBtn');
 const resetRoundBtn = document.getElementById('resetRoundBtn');
 const resetAllBtn = document.getElementById('resetAllBtn');
 const closeRoomBtn = document.getElementById('closeRoomBtn');
+const closeRoomOverlay = document.getElementById('closeRoomOverlay');
+const closeRoomCode = document.getElementById('closeRoomCode');
+const closeRoomCancelBtn = document.getElementById('closeRoomCancelBtn');
+const closeRoomConfirmBtn = document.getElementById('closeRoomConfirmBtn');
 const roundStatus = document.getElementById('roundStatus');
 const hostQueueBody = document.getElementById('hostQueueBody');
 const leaderboardBody = document.getElementById('leaderboardBody');
@@ -111,9 +115,15 @@ resetAllBtn.addEventListener('click', () => {
   }
 });
 closeRoomBtn.addEventListener('click', () => {
-  if (confirm('Close this room? Every player will be disconnected immediately and a fresh room/code will be created.')) {
-    socket.emit('host:closeRoom');
-  }
+  closeRoomCode.textContent = roomCodeDisplay.textContent;
+  closeRoomOverlay.classList.remove('hidden');
+});
+closeRoomCancelBtn.addEventListener('click', () => {
+  closeRoomOverlay.classList.add('hidden');
+});
+closeRoomConfirmBtn.addEventListener('click', () => {
+  closeRoomOverlay.classList.add('hidden');
+  socket.emit('host:closeRoom');
 });
 
 const MAX_WINNERS_PER_ROUND = 5; // matches server.js MAX_WINNERS_PER_ROUND

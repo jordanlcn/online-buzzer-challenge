@@ -81,6 +81,25 @@
     </div>
   </main>
 
+  <div id="closeRoomOverlay" class="overlay hidden">
+    <div class="confirm-card">
+      <h2>Close this room?</h2>
+      <p class="confirm-lead">This will immediately:</p>
+      <ul class="confirm-list">
+        <li>Disconnect every player currently in the room</li>
+        <li>Deactivate room code <strong id="closeRoomCode">------</strong> — it will stop working</li>
+        <li>End the round in progress, if any, discarding its buzz order</li>
+        <li>Permanently erase this room's leaderboard and stats</li>
+        <li>Create a brand-new room with a new code right after, for you to share again</li>
+      </ul>
+      <p class="confirm-warning">This cannot be undone.</p>
+      <div class="confirm-actions">
+        <button id="closeRoomCancelBtn" class="btn">Cancel</button>
+        <button id="closeRoomConfirmBtn" class="btn btn-danger">Close Room</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/host.js"></script>
 </body>

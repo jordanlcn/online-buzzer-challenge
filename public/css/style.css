@@ -146,6 +146,19 @@ hr { border: none; border-top: 1px solid #334155; margin: 20px 0; }
 }
 .equation { font-size: 48px; font-weight: 800; margin: 10px 0; }
 .math-label { color: var(--muted); }
+
+.confirm-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 28px;
+  width: min(90vw, 440px);
+}
+.confirm-card h2 { margin-top: 0; }
+.confirm-lead { color: var(--muted); margin-bottom: 8px; }
+.confirm-list { margin: 0 0 16px; padding-left: 22px; }
+.confirm-list li { margin-bottom: 8px; line-height: 1.4; }
+.confirm-warning { color: var(--accent); font-weight: 700; margin-bottom: 20px; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; }
 #answerForm { display: flex; gap: 8px; margin-top: 10px; }
 #answerInput { flex: 1; text-align: center; font-size: 20px; }
 .math-timer { margin-top: 12px; height: 6px; background: #334155; border-radius: 4px; overflow: hidden; }

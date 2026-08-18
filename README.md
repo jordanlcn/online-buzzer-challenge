@@ -90,6 +90,14 @@ instead of localhost.
 - **Live ping display**: each player page shows its own round-trip ping to
   the server. This is informational only (visible on the host dashboard too)
   and does not affect who is judged first — see fairness note above.
+- **Audio alert on the player page**: a short generated tone (Web Audio API,
+  no sound file needed) plays once whenever the buzzer transitions from not
+  armed to armed, so players get an audible heads-up instead of having to
+  watch the screen. It won't double-fire for a redundant re-arm while already
+  armed, and only fires again after a genuine reset-and-rearm. Browsers block
+  audio until a page has seen some interaction; this waits for the first tap,
+  click, or keypress to unlock it, which normally happens well before a round
+  actually starts (e.g. while typing a name on the join screen).
 - **Tracking**: both the host dashboard and every player's own page show the same
   "Live Buzz Order" table for the current round — name, milliseconds behind the
   first buzz, the exact equation each buzzer was given, what they actually typed
@@ -111,8 +119,11 @@ instead of localhost.
     confirmation first).
   - *Close Room* — ends the game on demand: every connected player is
     disconnected immediately with a "host closed the room" alert, and the
-    host's dashboard spins up a brand-new room/code right away (asks for
-    confirmation first, since it's disruptive).
+    host's dashboard spins up a brand-new room/code right away. Clicking it
+    opens a confirmation dialog that spells out every consequence (players
+    disconnected, the current code deactivated, the in-progress round and its
+    buzz order discarded, this room's leaderboard permanently erased, a fresh
+    room created immediately after) before anything actually happens.
 - **Duplicate names are rejected within a room** (case-insensitive) — if
   "Alice" is already connected, a second person can't also join as "alice."
   Without this, two players sharing a name would silently merge into one

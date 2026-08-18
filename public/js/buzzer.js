@@ -25,6 +25,45 @@ const mathTimer = document.getElementById('mathTimer');
 let hasBuzzedThisRound = false;
 let currentEquationId = null;
 let timerBarEl = null;
+let wasArmed = false;
+
+// --- audio alert when the buzzer goes live ---
+// Generated with the Web Audio API (no sound file to load/host). Browsers
+// block audio until the page has seen a user interaction, so the context is
+// created eagerly but only actually resumed once the player has tapped or
+// pressed something - by the time a round is armed there's usually been
+// plenty of opportunity for that (e.g. typing their name on the join page).
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx) audioCtx = new Ctx();
+  }
+  return audioCtx;
+}
+['pointerdown', 'keydown'].forEach((evt) => {
+  document.addEventListener(evt, () => {
+    const ctx = getAudioCtx();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+  }, { once: true });
+});
+
+function playBuzzerAlert() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume();
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(880, now);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.3);
+}
 
 // --- resilience for a dropped player connection ---
 // If a cached resume token exists (from a previous successful join in this
@@ -107,6 +146,11 @@ socket.on('buzz:rejected', () => {
 });
 
 socket.on('state:update', ({ armed, winner, queue }) => {
+  if (armed && !wasArmed) {
+    playBuzzerAlert(); // the buzzer just went live - give an audible heads-up
+  }
+  wasArmed = armed;
+
   if (armed && queue.length === 0) {
     hasBuzzedThisRound = false; // fresh round started by host
   }
