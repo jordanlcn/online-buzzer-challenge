@@ -25,9 +25,28 @@ let latestLatency = new Map();
 // Lightweight access control: only hosts who type the right company name can
 // create a room. Cached in sessionStorage so a reconnect (not a full page
 // reload) doesn't force retyping it.
+//
+// --- resilience for a dropped host connection ---
+// The current room's sessionId is cached as a "resume token." On (re)connect,
+// try that first: if it's still valid (room is within its grace period, or
+// never lost its host at all), the server silently reattaches this socket as
+// the room's host - same code, same players, same round in progress. Only
+// falls back to the normal auth-and-create flow if there's no token, or the
+// server says it's no longer valid (room already closed for good).
 socket.on('connect', () => {
-  const cached = sessionStorage.getItem('buzzer_company');
-  if (cached) socket.emit('host:authenticate', { companyName: cached });
+  const cachedToken = sessionStorage.getItem('buzzer_host_token');
+  if (cachedToken) {
+    socket.emit('host:resume', { token: cachedToken });
+    return;
+  }
+  const cachedCompany = sessionStorage.getItem('buzzer_company');
+  if (cachedCompany) socket.emit('host:authenticate', { companyName: cachedCompany });
+});
+
+socket.on('host:resumeFailed', () => {
+  sessionStorage.removeItem('buzzer_host_token');
+  const cachedCompany = sessionStorage.getItem('buzzer_company');
+  if (cachedCompany) socket.emit('host:authenticate', { companyName: cachedCompany });
 });
 
 authForm.addEventListener('submit', (e) => {
@@ -47,8 +66,11 @@ socket.on('host:authenticated', ({ ok, message }) => {
   }
 });
 
-socket.on('room:created', ({ code }) => {
+socket.on('room:created', ({ code, token }) => {
   roomCodeDisplay.textContent = code;
+  authGate.classList.add('hidden');
+  dashboardContent.classList.remove('hidden');
+  if (token) sessionStorage.setItem('buzzer_host_token', token);
 });
 
 socket.on('room:code', ({ code }) => {
@@ -56,6 +78,7 @@ socket.on('room:code', ({ code }) => {
 });
 
 socket.on('room:closed', ({ reason }) => {
+  sessionStorage.removeItem('buzzer_host_token');
   if (reason === 'inactive_timeout') {
     alert('This room was closed for being idle too long. Starting a new one.');
     socket.emit('host:createRoom');

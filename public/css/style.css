@@ -107,6 +107,7 @@ hr { border: none; border-top: 1px solid #334155; margin: 20px 0; }
 .status-waiting { background: #334155; color: var(--muted); }
 .status-armed { background: #14532d; color: #86efac; }
 .status-winner { background: #713f12; color: #fde68a; }
+.status-warning { background: #7c2d12; color: #fed7aa; }
 
 .buzz-btn {
   width: min(70vw, 260px);

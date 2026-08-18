@@ -9,6 +9,7 @@ const socket = io();
 const playerNameEl = document.getElementById('playerName');
 const roomCodePill = document.getElementById('roomCodePill');
 const pingPill = document.getElementById('pingPill');
+const hostStatusBanner = document.getElementById('hostStatusBanner');
 const statusBanner = document.getElementById('statusBanner');
 const buzzBtn = document.getElementById('buzzBtn');
 const queueBody = document.getElementById('queueBody');
@@ -44,6 +45,14 @@ socket.on('room:closed', () => {
   sessionStorage.removeItem('buzzer_name');
   sessionStorage.removeItem('buzzer_code');
   window.location.href = 'index.html';
+});
+
+// If the host's connection drops (wifi blip, accidental refresh), the room
+// stays open for a short grace period rather than closing immediately -
+// buzzing/answering keeps working normally the whole time. This just lets
+// players know why the host dashboard might be momentarily unresponsive.
+socket.on('host:status', ({ connected }) => {
+  hostStatusBanner.classList.toggle('hidden', connected);
 });
 
 // --- latency probe: purely informational, does NOT affect buzz ordering ---

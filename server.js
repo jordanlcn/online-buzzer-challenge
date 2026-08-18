@@ -13,6 +13,7 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 const ROOM_TTL_MS = 3 * 60 * 60 * 1000; // abandoned rooms are cleaned up after 3 hours
 const ROOM_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
+const HOST_GRACE_MS = 60 * 1000; // how long a room survives a dropped host before closing
 const MAX_WINNERS_PER_ROUND = 5; // buzzer stays open until 5 players answer correctly
 const MIN_TIME_LIMIT_SECONDS = 2;
 const MAX_TIME_LIMIT_SECONDS = 60;
@@ -242,6 +243,7 @@ function getHostRoom(socket) {
 function closeRoom(sessionId, reason) {
   const room = rooms.get(sessionId);
   if (!room) return;
+  if (room.hostGraceTimer) clearTimeout(room.hostGraceTimer);
   room.round.queue.forEach((entry) => {
     if (entry.timer) clearTimeout(entry.timer);
   });
@@ -293,6 +295,8 @@ io.on('connection', (socket) => {
       mathEnabled: true,
       timeLimitMs: null, // null = use the suggested time for the current difficulty
       showLiveStats: false, // whether players can see the leaderboard on their own page
+      hostConnected: true,
+      hostGraceTimer: null,
       round: { armed: false, queue: [], winner: null },
       createdAt: Date.now(),
       lastActivity: Date.now(),
@@ -302,7 +306,33 @@ io.on('connection', (socket) => {
     hostSessions.set(socket.id, sessionId);
     socket.join(roomChannel(sessionId));
     socket.join(hostChannel(sessionId));
-    socket.emit('room:created', { code: joinCode });
+    socket.emit('room:created', { code: joinCode, token: sessionId });
+    broadcastState(room);
+  });
+
+  // Resilience for a dropped host connection (wifi blip, accidental refresh,
+  // browser reopened): the host's browser caches this room's sessionId as a
+  // "resume token." If the same browser reconnects within HOST_GRACE_MS of a
+  // disconnect, it can silently resume control of the SAME room - same code,
+  // same players, same round in progress - instead of starting a new one.
+  socket.on('host:resume', ({ token } = {}) => {
+    const room = token ? rooms.get(token) : null;
+    if (!room) {
+      socket.emit('host:resumeFailed', {});
+      return;
+    }
+    if (room.hostGraceTimer) {
+      clearTimeout(room.hostGraceTimer);
+      room.hostGraceTimer = null;
+    }
+    authorizedHosts.add(socket.id);
+    hostSessions.set(socket.id, room.sessionId);
+    room.hostConnected = true;
+    touch(room);
+    socket.join(roomChannel(room.sessionId));
+    socket.join(hostChannel(room.sessionId));
+    socket.emit('room:created', { code: room.joinCode, token: room.sessionId });
+    io.to(roomChannel(room.sessionId)).emit('host:status', { connected: true });
     broadcastState(room);
   });
 
@@ -330,6 +360,7 @@ io.on('connection', (socket) => {
     socket.join(roomChannel(sessionId));
     touch(room);
     socket.emit('registered', { name: clean, code: room.joinCode });
+    socket.emit('host:status', { connected: room.hostConnected });
     broadcastState(room);
   });
 
@@ -469,7 +500,16 @@ io.on('connection', (socket) => {
     authorizedHosts.delete(socket.id);
     const hostedSessionId = hostSessions.get(socket.id);
     if (hostedSessionId) {
-      closeRoom(hostedSessionId, 'host_disconnected');
+      hostSessions.delete(socket.id);
+      const room = rooms.get(hostedSessionId);
+      if (room) {
+        room.hostConnected = false;
+        io.to(roomChannel(hostedSessionId)).emit('host:status', { connected: false });
+        if (room.hostGraceTimer) clearTimeout(room.hostGraceTimer);
+        room.hostGraceTimer = setTimeout(() => {
+          closeRoom(hostedSessionId, 'host_disconnected');
+        }, HOST_GRACE_MS);
+      }
       return;
     }
     const sessionId = playerSessions.get(socket.id);

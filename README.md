@@ -46,10 +46,19 @@ instead of localhost.
   a game — already-joined players aren't affected by a reroll, it only changes what
   code new joiners need to type). Players must enter that code plus their name to
   join. Multiple independent games can run at once, each isolated in its own room.
-- **If the host disconnects (closes the tab, refreshes, loses connection), the room
-  closes immediately** and every player in it gets an alert saying the host closed
-  the room, then gets sent back to the join screen. This means refreshing the host
-  dashboard starts a brand-new room/code — it isn't a "resume" button.
+- **Host disconnect resilience**: if the host's connection drops (wifi blip,
+  accidental refresh, tab briefly closed/reopened), the room does **not** close
+  immediately. It stays fully alive for a 60-second grace period (`HOST_GRACE_MS`
+  in `server.js`) — buzzing, math checks, and everything else keep working
+  normally for players the whole time, since none of that depends on the host
+  being connected. The host's browser caches a resume token in `sessionStorage`;
+  if it reconnects within that window (including via a page refresh), it
+  silently resumes control of the *same* room — same code, same players, same
+  round in progress — instead of starting a new one. Players see a small
+  "Host connection lost - reconnecting..." banner while this is happening,
+  which clears automatically once the host is back. If the host genuinely
+  doesn't return within 60 seconds, the room closes for good and every player
+  gets the "host closed the room" alert, same as before.
 - **Abandoned rooms** (no activity — no buzzes, resets, joins, etc. — for 3 hours)
   are automatically cleaned up by a background sweep, even if a host tab is still
   technically connected. This is a safety net; the normal cleanup path is the
