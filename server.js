@@ -169,10 +169,6 @@ function clearRound(room) {
   room.round = { armed: room.round.armed, queue: [], winner: null };
 }
 
-function currentChallenger(room) {
-  return room.round.queue.find((e) => e.status === 'pending');
-}
-
 function correctCount(room) {
   return room.round.queue.filter((e) => e.status === 'correct').length;
 }
@@ -199,22 +195,21 @@ function issueChallenge(room, entry) {
   entry.timer = setTimeout(() => resolveChallenge(room, entry, null), timeoutMs + 150);
 }
 
-function advanceQueue(room) {
-  if (correctCount(room) >= MAX_WINNERS_PER_ROUND) {
-    // Target reached - nobody still waiting gets a turn this round.
-    room.round.queue.forEach((e) => {
-      if (e.status === 'waiting') e.status = 'skipped';
-    });
-    broadcastState(room);
-    return;
-  }
-  const next = room.round.queue.find((e) => e.status === 'waiting');
-  if (next) issueChallenge(room, next);
-  broadcastState(room);
+// Once the 5th correct answer lands, the buzzer disables outright: any other
+// challenge still in flight (issued in parallel to other buzzers) is voided
+// rather than left to resolve, since it can no longer count for anything.
+function closeOutRound(room) {
+  room.round.queue.forEach((e) => {
+    if (e.status === 'pending' || e.status === 'waiting') {
+      if (e.timer) clearTimeout(e.timer);
+      e.status = 'skipped';
+    }
+  });
+  room.round.armed = false;
 }
 
 function resolveChallenge(room, entry, submittedAnswer) {
-  if (entry.status !== 'pending') return; // already resolved
+  if (entry.status !== 'pending') return; // already resolved (or voided by closeOutRound)
   if (entry.timer) clearTimeout(entry.timer);
 
   entry.submittedAnswer = submittedAnswer === undefined ? null : submittedAnswer;
@@ -229,11 +224,14 @@ function resolveChallenge(room, entry, submittedAnswer) {
     entry.status = 'correct';
     if (!room.round.winner) room.round.winner = entry.name; // first correct answer is the round's winner
     stats.wins += 1;
+    if (correctCount(room) >= MAX_WINNERS_PER_ROUND) {
+      closeOutRound(room); // 5th correct answer posted - disable the buzzer
+    }
   } else {
     entry.status = submittedAnswer === null ? 'timeout' : 'wrong';
     stats.misses += 1;
   }
-  advanceQueue(room); // give the next queued buzzer their own challenge regardless of outcome
+  broadcastState(room);
 }
 
 function getHostRoom(socket) {
@@ -433,12 +431,12 @@ io.on('connection', (socket) => {
       if (!room.round.winner) room.round.winner = entry.name;
       stats.wins += 1;
       if (correctCount(room) >= MAX_WINNERS_PER_ROUND) {
-        room.round.queue.forEach((e) => {
-          if (e.status === 'waiting') e.status = 'skipped';
-        });
+        closeOutRound(room);
       }
-    } else if (!currentChallenger(room)) {
-      // no one is currently mid-challenge - the earliest waiting buzz goes next
+    } else {
+      // Give the equation to every buzzer immediately, in parallel - nobody
+      // waits for a turn. Only the first 5 correct answers count; the buzzer
+      // disables itself the moment the 5th correct one is posted.
       issueChallenge(room, entry);
     }
     broadcastState(room);
