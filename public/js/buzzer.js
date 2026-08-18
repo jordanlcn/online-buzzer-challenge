@@ -9,6 +9,7 @@ const socket = io();
 const playerNameEl = document.getElementById('playerName');
 const roomCodePill = document.getElementById('roomCodePill');
 const pingPill = document.getElementById('pingPill');
+const selfStatusBanner = document.getElementById('selfStatusBanner');
 const hostStatusBanner = document.getElementById('hostStatusBanner');
 const statusBanner = document.getElementById('statusBanner');
 const buzzBtn = document.getElementById('buzzBtn');
@@ -25,18 +26,42 @@ let hasBuzzedThisRound = false;
 let currentEquationId = null;
 let timerBarEl = null;
 
+// --- resilience for a dropped player connection ---
+// If a cached resume token exists (from a previous successful join in this
+// tab), try it first: the server re-attaches this socket to the same room
+// under the same name, including re-sending any in-flight math challenge with
+// its correct remaining time. Falls back to a fresh join if resuming fails
+// (e.g. room no longer exists).
 socket.on('connect', () => {
+  selfStatusBanner.classList.add('hidden');
+  const cachedToken = sessionStorage.getItem('buzzer_player_token');
+  if (cachedToken) {
+    socket.emit('player:resume', { code: roomCode, token: cachedToken });
+  } else {
+    socket.emit('player:joinRoom', { code: roomCode, name });
+  }
+});
+
+socket.on('player:resumeFailed', () => {
+  sessionStorage.removeItem('buzzer_player_token');
   socket.emit('player:joinRoom', { code: roomCode, name });
 });
 
-socket.on('registered', ({ name: confirmedName, code }) => {
+socket.on('disconnect', () => {
+  selfStatusBanner.classList.remove('hidden');
+  buzzBtn.disabled = true;
+});
+
+socket.on('registered', ({ name: confirmedName, code, token }) => {
   playerNameEl.textContent = confirmedName;
   roomCodePill.textContent = `room: ${code}`;
+  if (token) sessionStorage.setItem('buzzer_player_token', token);
 });
 
 socket.on('room:error', ({ message }) => {
   alert(message);
   sessionStorage.removeItem('buzzer_code');
+  sessionStorage.removeItem('buzzer_player_token');
   window.location.href = 'index.html';
 });
 
@@ -44,6 +69,7 @@ socket.on('room:closed', () => {
   alert('The host has closed the room.');
   sessionStorage.removeItem('buzzer_name');
   sessionStorage.removeItem('buzzer_code');
+  sessionStorage.removeItem('buzzer_player_token');
   window.location.href = 'index.html';
 });
 

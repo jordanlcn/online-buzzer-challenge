@@ -69,6 +69,28 @@ function hostChannel(sessionId) {
   return `room:${sessionId}:host`;
 }
 
+// Defense in depth: this whole server is a single process shared by every
+// live room, so an uncaught exception in one handler could otherwise take
+// down every game at once. safeOn() catches synchronous errors per-handler;
+// the process-level listeners below catch anything that slips past that
+// (e.g. inside a setTimeout/setInterval callback) as a last resort.
+function safeOn(socket, event, handler) {
+  socket.on(event, (...args) => {
+    try {
+      handler(...args);
+    } catch (err) {
+      console.error(`[socket:${event}] handler error:`, err);
+    }
+  });
+}
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception (server staying up):', err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection (server staying up):', err);
+});
+
 function touch(room) {
   room.lastActivity = Date.now();
 }
@@ -112,6 +134,12 @@ function leaderboard(room) {
   );
 }
 
+// So the host can see who's actually connected and waiting, not just who's
+// shown up on the leaderboard (which only gets an entry once someone buzzes).
+function connectedPlayersList(room) {
+  return [...room.players.values()].map((p) => p.name).sort((a, b) => a.localeCompare(b));
+}
+
 // Shared by both the host dashboard and every player's own page: each buzzer
 // gets their own independently-random equation, so showing everyone's
 // equation/answer doesn't help anyone game a future question.
@@ -145,6 +173,7 @@ function broadcastState(room) {
     queue: queueDetail(room),
   });
   io.to(hostChannel(room.sessionId)).emit('leaderboard:update', leaderboard(room));
+  io.to(hostChannel(room.sessionId)).emit('players:update', connectedPlayersList(room));
   io.to(hostChannel(room.sessionId)).emit('latency:update', [...room.latencyByName.entries()]);
   io.to(hostChannel(room.sessionId)).emit('difficulty:update', room.difficulty);
   io.to(hostChannel(room.sessionId)).emit('settings:update', {
@@ -193,7 +222,13 @@ function issueChallenge(room, entry) {
       timeoutMs,
     });
   }
-  entry.timer = setTimeout(() => resolveChallenge(room, entry, null), timeoutMs + 150);
+  entry.timer = setTimeout(() => {
+    try {
+      resolveChallenge(room, entry, null);
+    } catch (err) {
+      console.error('challenge timeout handler error:', err);
+    }
+  }, timeoutMs + 150);
 }
 
 // Once the 5th correct answer lands, the buzzer disables outright: any other
@@ -263,22 +298,26 @@ function closeRoom(sessionId, reason) {
 // disconnects, but this sweep catches anything left behind (e.g. a host tab
 // left open with zero activity) so memory doesn't grow unbounded.
 setInterval(() => {
-  const now = Date.now();
-  for (const [sessionId, room] of rooms) {
-    if (now - room.lastActivity > ROOM_TTL_MS) {
-      closeRoom(sessionId, 'inactive_timeout');
+  try {
+    const now = Date.now();
+    for (const [sessionId, room] of rooms) {
+      if (now - room.lastActivity > ROOM_TTL_MS) {
+        closeRoom(sessionId, 'inactive_timeout');
+      }
     }
+  } catch (err) {
+    console.error('room sweep error:', err);
   }
 }, ROOM_SWEEP_INTERVAL_MS);
 
 io.on('connection', (socket) => {
-  socket.on('host:authenticate', ({ companyName }) => {
+  safeOn(socket, 'host:authenticate', ({ companyName } = {}) => {
     const ok = String(companyName || '').trim().toLowerCase() === REQUIRED_COMPANY;
     if (ok) authorizedHosts.add(socket.id);
     socket.emit('host:authenticated', { ok });
   });
 
-  socket.on('host:createRoom', () => {
+  safeOn(socket, 'host:createRoom', () => {
     if (!authorizedHosts.has(socket.id)) {
       socket.emit('host:authenticated', { ok: false, message: 'Please enter your company name first.' });
       return;
@@ -289,6 +328,7 @@ io.on('connection', (socket) => {
       sessionId,
       joinCode,
       players: new Map(),
+      playerTokens: new Map(), // token -> name, so a dropped player can silently resume
       statsByName: new Map(),
       latencyByName: new Map(),
       difficulty: 'medium',
@@ -315,8 +355,8 @@ io.on('connection', (socket) => {
   // "resume token." If the same browser reconnects within HOST_GRACE_MS of a
   // disconnect, it can silently resume control of the SAME room - same code,
   // same players, same round in progress - instead of starting a new one.
-  socket.on('host:resume', ({ token } = {}) => {
-    const room = token ? rooms.get(token) : null;
+  safeOn(socket, 'host:resume', ({ token } = {}) => {
+    const room = typeof token === 'string' && token ? rooms.get(token) : null;
     if (!room) {
       socket.emit('host:resumeFailed', {});
       return;
@@ -336,7 +376,7 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  socket.on('host:rerollCode', () => {
+  safeOn(socket, 'host:rerollCode', () => {
     const room = getHostRoom(socket);
     if (!room) return;
     joinCodeIndex.delete(room.joinCode);
@@ -346,7 +386,7 @@ io.on('connection', (socket) => {
     io.to(hostChannel(room.sessionId)).emit('room:code', { code: room.joinCode });
   });
 
-  socket.on('player:joinRoom', ({ code, name }) => {
+  safeOn(socket, 'player:joinRoom', ({ code, name } = {}) => {
     const sessionId = joinCodeIndex.get(String(code || '').trim());
     const room = sessionId ? rooms.get(sessionId) : null;
     if (!room) {
@@ -354,17 +394,70 @@ io.on('connection', (socket) => {
       return;
     }
     const clean = String(name || '').trim().slice(0, 24) || 'Player';
+    const nameTaken = [...room.players.values()].some(
+      (p) => p.name.toLowerCase() === clean.toLowerCase()
+    );
+    if (nameTaken) {
+      socket.emit('room:error', { message: `"${clean}" is already in use in this room - pick a different name.` });
+      return;
+    }
+    const token = crypto.randomUUID();
     room.players.set(socket.id, { name: clean });
+    room.playerTokens.set(token, clean);
     playerSessions.set(socket.id, sessionId);
     getStats(room, clean);
     socket.join(roomChannel(sessionId));
     touch(room);
-    socket.emit('registered', { name: clean, code: room.joinCode });
+    socket.emit('registered', { name: clean, code: room.joinCode, token });
     socket.emit('host:status', { connected: room.hostConnected });
     broadcastState(room);
   });
 
-  socket.on('host:setDifficulty', (level) => {
+  // Resilience for a dropped player connection (wifi blip, locked phone,
+  // accidental refresh): the player's browser caches a per-player resume
+  // token. Reconnecting with it re-attaches them to the same room under the
+  // same name - including re-sending an in-flight math challenge with its
+  // correct remaining time - instead of making them join fresh (which would
+  // also just fail now, since their name is still "taken" until they resume).
+  safeOn(socket, 'player:resume', ({ code, token } = {}) => {
+    const sessionId = joinCodeIndex.get(String(code || '').trim());
+    const room = sessionId ? rooms.get(sessionId) : null;
+    const name = room && typeof token === 'string' ? room.playerTokens.get(token) : null;
+    if (!room || !name) {
+      socket.emit('player:resumeFailed', {});
+      return;
+    }
+    const nameTakenByAnother = [...room.players.entries()].some(
+      ([sid, p]) => p.name === name && sid !== socket.id
+    );
+    if (nameTakenByAnother) {
+      socket.emit('player:resumeFailed', {});
+      return;
+    }
+    room.players.set(socket.id, { name });
+    playerSessions.set(socket.id, sessionId);
+    touch(room);
+    socket.join(roomChannel(sessionId));
+
+    const activeEntry = room.round.queue.find((e) => e.name === name && e.status === 'pending');
+    if (activeEntry) {
+      activeEntry.socketId = socket.id;
+      const remaining = Math.max(0, activeEntry.deadline - Date.now());
+      socket.emit('math:challenge', {
+        equationId: activeEntry.equation.id,
+        a: activeEntry.equation.a,
+        b: activeEntry.equation.b,
+        op: activeEntry.equation.op,
+        timeoutMs: remaining,
+      });
+    }
+
+    socket.emit('registered', { name, code: room.joinCode, token });
+    socket.emit('host:status', { connected: room.hostConnected });
+    broadcastState(room);
+  });
+
+  safeOn(socket, 'host:setDifficulty', (level) => {
     const room = getHostRoom(socket);
     if (!room || !DIFFICULTIES.includes(level)) return;
     room.difficulty = level;
@@ -372,7 +465,7 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  socket.on('host:setMathEnabled', (enabled) => {
+  safeOn(socket, 'host:setMathEnabled', (enabled) => {
     const room = getHostRoom(socket);
     if (!room) return;
     room.mathEnabled = !!enabled;
@@ -380,7 +473,7 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  socket.on('host:setShowLiveStats', (enabled) => {
+  safeOn(socket, 'host:setShowLiveStats', (enabled) => {
     const room = getHostRoom(socket);
     if (!room) return;
     room.showLiveStats = !!enabled;
@@ -388,7 +481,7 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  socket.on('host:setTimeLimit', ({ seconds } = {}) => {
+  safeOn(socket, 'host:setTimeLimit', ({ seconds } = {}) => {
     const room = getHostRoom(socket);
     if (!room) return;
     if (seconds === null || seconds === undefined || seconds === '') {
@@ -402,7 +495,7 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  socket.on('host:arm', () => {
+  safeOn(socket, 'host:arm', () => {
     const room = getHostRoom(socket);
     if (!room) return;
     clearRound(room);
@@ -411,7 +504,7 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  socket.on('host:resetRound', () => {
+  safeOn(socket, 'host:resetRound', () => {
     const room = getHostRoom(socket);
     if (!room) return;
     clearRound(room);
@@ -419,7 +512,7 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  socket.on('host:resetAll', () => {
+  safeOn(socket, 'host:resetAll', () => {
     const room = getHostRoom(socket);
     if (!room) return;
     clearRound(room);
@@ -430,14 +523,22 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  socket.on('buzz', () => {
+  // Lets the host end the game on demand (e.g. "that's a wrap") instead of
+  // only ever closing via a dropped connection or the inactivity sweep.
+  safeOn(socket, 'host:closeRoom', () => {
+    const room = getHostRoom(socket);
+    if (!room) return;
+    closeRoom(room.sessionId, 'host_closed');
+  });
+
+  safeOn(socket, 'buzz', () => {
     const sessionId = playerSessions.get(socket.id);
     const room = sessionId ? rooms.get(sessionId) : null;
     if (!room) return;
     const player = room.players.get(socket.id);
     if (!player) return;
     if (!room.round.armed) return; // buzzer not live
-    if (room.round.queue.some((e) => e.socketId === socket.id)) return; // one buzz per round per player
+    if (room.round.queue.some((e) => e.name === player.name)) return; // one buzz per round per player
     if (correctCount(room) >= MAX_WINNERS_PER_ROUND) {
       socket.emit('buzz:rejected', { reason: 'full' });
       return;
@@ -473,7 +574,7 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  socket.on('math:answer', ({ equationId, answer }) => {
+  safeOn(socket, 'math:answer', ({ equationId, answer } = {}) => {
     const sessionId = playerSessions.get(socket.id);
     const room = sessionId ? rooms.get(sessionId) : null;
     if (!room) return;
@@ -487,16 +588,19 @@ io.on('connection', (socket) => {
 
   // Simple latency probe: client pings, server pongs immediately, client
   // reports the measured round-trip time so the host dashboard can show it.
-  socket.on('latency:report', (rttMs) => {
+  safeOn(socket, 'latency:report', (rttMs) => {
     const sessionId = playerSessions.get(socket.id);
     const room = sessionId ? rooms.get(sessionId) : null;
     if (!room) return;
     const player = room.players.get(socket.id);
-    if (player) room.latencyByName.set(player.name, rttMs);
+    const n = Number(rttMs);
+    if (player && Number.isFinite(n)) room.latencyByName.set(player.name, n);
   });
-  socket.on('latency:ping', (t) => socket.emit('latency:pong', t));
+  safeOn(socket, 'latency:ping', (t) => {
+    if (typeof t === 'number' && Number.isFinite(t)) socket.emit('latency:pong', t);
+  });
 
-  socket.on('disconnect', () => {
+  safeOn(socket, 'disconnect', () => {
     authorizedHosts.delete(socket.id);
     const hostedSessionId = hostSessions.get(socket.id);
     if (hostedSessionId) {

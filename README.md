@@ -109,6 +109,44 @@ instead of localhost.
   - *Reset Round* — clears the current round's queue without re-arming.
   - *Reset Everything* — wipes the leaderboard and all round data (asks for
     confirmation first).
+  - *Close Room* — ends the game on demand: every connected player is
+    disconnected immediately with a "host closed the room" alert, and the
+    host's dashboard spins up a brand-new room/code right away (asks for
+    confirmation first, since it's disruptive).
+- **Duplicate names are rejected within a room** (case-insensitive) — if
+  "Alice" is already connected, a second person can't also join as "alice."
+  Without this, two players sharing a name would silently merge into one
+  leaderboard entry (wins/misses keyed by name).
+- **Player reconnection resilience**: mirrors the host resilience above, but
+  for players — if a player's phone locks, wifi drops, or they refresh the
+  page, their browser holds a per-player resume token. Reconnecting with it
+  silently re-attaches them to the same room under the same name, and if they
+  had a math challenge in flight when they dropped, it's re-sent to them with
+  its correct *remaining* time (not restarted from full) so they can still
+  answer it. This also closes a fairness gap: without it, a reconnected player
+  got a new connection ID and could buzz a second time under the same name;
+  the one-buzz-per-round check is now keyed to name, not connection ID.
+- **A player's own connection status is shown to them**: if *their* link to
+  the server drops (separate from the host-status banner above, which is
+  about the host's connection), they see a "Connection lost - reconnecting..."
+  banner and their buzz button disables until they're back — Socket.IO
+  retries automatically, this just gives visible feedback instead of a
+  silently-unresponsive page.
+- **Connected Players panel** (host dashboard): shows a live count and name
+  list of everyone currently connected to the room, separate from the
+  leaderboard (which only gets an entry once someone buzzes at least once, and
+  keeps showing people who've since disconnected). Useful for "is everyone in
+  before I start?" with a large group.
+- **Crash isolation**: this server is one process shared by every live room,
+  so an unhandled error anywhere could otherwise take down every game at once.
+  Every socket event handler is wrapped so a thrown error is logged and
+  contained to that one action instead of crashing the process; the two
+  background timers (challenge timeouts, the inactivity sweep) are wrapped the
+  same way; and process-level `uncaughtException`/`unhandledRejection`
+  listeners log anything that still somehow gets through, as a last resort.
+  Handlers also default missing/malformed payloads to a safe empty value
+  (e.g. a client emitting an event with no data at all) rather than throwing
+  on destructuring, so most bad input never even reaches the try/catch.
 
 ## Notes / things to adjust if you extend this
 

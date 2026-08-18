@@ -15,9 +15,12 @@ const showLiveStatsToggle = document.getElementById('showLiveStatsToggle');
 const armBtn = document.getElementById('armBtn');
 const resetRoundBtn = document.getElementById('resetRoundBtn');
 const resetAllBtn = document.getElementById('resetAllBtn');
+const closeRoomBtn = document.getElementById('closeRoomBtn');
 const roundStatus = document.getElementById('roundStatus');
 const hostQueueBody = document.getElementById('hostQueueBody');
 const leaderboardBody = document.getElementById('leaderboardBody');
+const playersCount = document.getElementById('playersCount');
+const playersList = document.getElementById('playersList');
 
 let latestLatency = new Map();
 
@@ -82,6 +85,8 @@ socket.on('room:closed', ({ reason }) => {
   if (reason === 'inactive_timeout') {
     alert('This room was closed for being idle too long. Starting a new one.');
     socket.emit('host:createRoom');
+  } else if (reason === 'host_closed') {
+    socket.emit('host:createRoom'); // deliberate close - spin up a fresh room right away
   }
 });
 
@@ -103,6 +108,11 @@ resetRoundBtn.addEventListener('click', () => socket.emit('host:resetRound'));
 resetAllBtn.addEventListener('click', () => {
   if (confirm('Reset ALL players and stats? This cannot be undone.')) {
     socket.emit('host:resetAll');
+  }
+});
+closeRoomBtn.addEventListener('click', () => {
+  if (confirm('Close this room? Every player will be disconnected immediately and a fresh room/code will be created.')) {
+    socket.emit('host:closeRoom');
   }
 });
 
@@ -141,6 +151,11 @@ socket.on('leaderboard:update', (rows) => {
 
 socket.on('latency:update', (entries) => {
   latestLatency = new Map(entries);
+});
+
+socket.on('players:update', (names) => {
+  playersCount.textContent = names.length;
+  playersList.textContent = names.length ? names.join(', ') : '(no one has joined yet)';
 });
 
 socket.on('difficulty:update', (level) => {

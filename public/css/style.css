@@ -108,6 +108,7 @@ hr { border: none; border-top: 1px solid #334155; margin: 20px 0; }
 .status-armed { background: #14532d; color: #86efac; }
 .status-winner { background: #713f12; color: #fde68a; }
 .status-warning { background: #7c2d12; color: #fed7aa; }
+.status-danger { background: #7f1d1d; color: #fecaca; }
 
 .buzz-btn {
   width: min(70vw, 260px);
@@ -207,5 +208,6 @@ hr { border: none; border-top: 1px solid #334155; margin: 20px 0; }
 @media (max-width: 800px) { .host-columns { grid-template-columns: 1fr; } }
 
 .panel { background: var(--card); border-radius: 12px; padding: 16px; }
+.players-list { color: var(--muted); font-size: 14px; line-height: 1.6; word-break: break-word; }
 .queue-table { width: 100%; border-collapse: collapse; }
 .queue-table th, .queue-table td { text-align: left; padding: 8px; border-bottom: 1px solid #334155; font-size: 14px; }
