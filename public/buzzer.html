@@ -31,8 +31,13 @@
     </div>
 
     <section class="queue-panel">
-      <h2>Buzz Order</h2>
-      <ol id="queueList" class="queue-list"></ol>
+      <h2>Live Buzz Order (this round)</h2>
+      <table class="queue-table">
+        <thead>
+          <tr><th>#</th><th>Name</th><th>+ms after 1st</th><th>Status</th></tr>
+        </thead>
+        <tbody id="queueBody"></tbody>
+      </table>
     </section>
   </main>
 

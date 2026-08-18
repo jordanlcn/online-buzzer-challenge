@@ -87,6 +87,8 @@ instead of localhost.
   (correct/wrong/timeout/skipped) — plus a persistent leaderboard (total buzzes,
   wins, misses) across rounds. The equation/answer detail is host-only and never
   sent to players, so buzzing in doesn't leak anyone else's equation or answer.
+  Players see the same "Live Buzz Order" table on their own page (rank, name,
+  ms behind first, status) minus the equation/answer columns.
 - **Reset controls** (host dashboard):
   - *Start / Next Round* — arms the buzzer for a new question, clears the
     current round's queue, keeps the leaderboard.

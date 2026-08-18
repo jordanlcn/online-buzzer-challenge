@@ -11,7 +11,7 @@ const roomCodePill = document.getElementById('roomCodePill');
 const pingPill = document.getElementById('pingPill');
 const statusBanner = document.getElementById('statusBanner');
 const buzzBtn = document.getElementById('buzzBtn');
-const queueList = document.getElementById('queueList');
+const queueBody = document.getElementById('queueBody');
 const mathOverlay = document.getElementById('mathOverlay');
 const equationText = document.getElementById('equationText');
 const answerForm = document.getElementById('answerForm');
@@ -103,19 +103,25 @@ socket.on('state:update', ({ armed, winner, queue }) => {
 });
 
 function renderQueue(queue) {
-  queueList.innerHTML = '';
+  queueBody.innerHTML = '';
   queue.forEach((entry) => {
-    const li = document.createElement('li');
-    li.className = `q-${entry.status}`;
-    const suffix =
-      entry.status === 'correct' ? ' ✅' :
-      entry.status === 'wrong' ? ' ✗ wrong answer' :
-      entry.status === 'timeout' ? ' ⏱ too slow' :
-      entry.status === 'pending' ? ' (solving...)' :
-      entry.status === 'skipped' ? ' (buzzer filled up)' : ' (waiting)';
-    li.textContent = `${entry.name} - +${entry.msAfterFirst}ms${suffix}`;
-    queueList.appendChild(li);
+    const statusLabel =
+      entry.status === 'correct' ? '✅ correct' :
+      entry.status === 'wrong' ? '✗ wrong answer' :
+      entry.status === 'timeout' ? '⏱ too slow' :
+      entry.status === 'pending' ? 'solving...' :
+      entry.status === 'skipped' ? 'buzzer filled up' : 'waiting';
+    const tr = document.createElement('tr');
+    tr.className = `q-${entry.status}`;
+    tr.innerHTML = `<td>${entry.rank}</td><td>${escapeHtml(entry.name)}</td><td>+${entry.msAfterFirst}ms</td><td>${statusLabel}</td>`;
+    queueBody.appendChild(tr);
   });
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
 }
 
 socket.on('math:challenge', ({ equationId, a, b, op, timeoutMs }) => {
