@@ -21,6 +21,17 @@ const equationText = document.getElementById('equationText');
 const answerForm = document.getElementById('answerForm');
 const answerInput = document.getElementById('answerInput');
 const mathTimer = document.getElementById('mathTimer');
+const joinNewRoomBtn = document.getElementById('joinNewRoomBtn');
+
+joinNewRoomBtn.addEventListener('click', () => {
+  // Leaves the current room: navigating away tears down this socket, which
+  // the server treats as a normal player disconnect. Keeps the player's name
+  // cached so it's pre-filled on the join screen, but clears the room code
+  // and resume token since those belonged to the room being left.
+  sessionStorage.removeItem('buzzer_code');
+  sessionStorage.removeItem('buzzer_player_token');
+  window.location.href = 'index.html';
+});
 
 let hasBuzzedThisRound = false;
 let currentEquationId = null;

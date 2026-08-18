@@ -27,6 +27,8 @@
     const codeInput = document.getElementById('codeInput');
     const nameInput = document.getElementById('nameInput');
     const error = document.getElementById('error');
+    const cachedName = sessionStorage.getItem('buzzer_name');
+    if (cachedName) nameInput.value = cachedName;
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const name = nameInput.value.trim();

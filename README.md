@@ -64,6 +64,12 @@ instead of localhost.
   technically connected. This is a safety net; the normal cleanup path is the
   immediate close on host disconnect above.
 - **Registration**: players enter a room code and name on the landing page before they can buzz.
+- **"Join a New Room" link** (player page): lets a player leave their current
+  room and join a different one, without needing to type their name again —
+  it's pre-filled on the join screen. Leaving is just a page navigation, which
+  the server treats as a normal disconnect (the old room immediately shows
+  them gone from Connected Players); nothing special needs to happen for them
+  to show up as a fresh join in the new room.
 - **Fair ordering regardless of internet speed**: every buzz is timestamped the
   instant it *arrives* at the server (`Date.now()` inside the server's socket
   handler) — never using the client's own clock. This is the important bit:
