@@ -55,7 +55,7 @@ instead of localhost.
   if it reconnects within that window (including via a page refresh), it
   silently resumes control of the *same* room — same code, same players, same
   round in progress — instead of starting a new one. Players see a small
-  "Host connection lost - reconnecting..." banner while this is happening,
+  "The Host has lost connection - attempting to reconnect" banner while this is happening,
   which clears automatically once the host is back. If the host genuinely
   doesn't return within 60 seconds, the room closes for good and every player
   gets the "host closed the room" alert, same as before.
