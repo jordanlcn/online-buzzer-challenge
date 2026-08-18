@@ -111,21 +111,10 @@ function leaderboard(room) {
   );
 }
 
-function publicQueue(room) {
-  const first = room.round.queue[0];
-  const baseTime = first ? first.serverTime : null;
-  return room.round.queue.map((entry, i) => ({
-    name: entry.name,
-    rank: i + 1,
-    status: entry.status,
-    msAfterFirst: baseTime === null ? 0 : entry.serverTime - baseTime,
-  }));
-}
-
-// Host-only view: includes the actual equation and what the player answered.
-// Deliberately not sent to players, so buzzing-in doesn't leak other players'
-// equations/answers to anyone watching their own browser's network traffic.
-function hostQueueDetail(room) {
+// Shared by both the host dashboard and every player's own page: each buzzer
+// gets their own independently-random equation, so showing everyone's
+// equation/answer doesn't help anyone game a future question.
+function queueDetail(room) {
   const first = room.round.queue[0];
   const baseTime = first ? first.serverTime : null;
   return room.round.queue.map((entry, i) => ({
@@ -152,12 +141,11 @@ function broadcastState(room) {
   io.to(roomChannel(room.sessionId)).emit('state:update', {
     armed: room.round.armed,
     winner: room.round.winner,
-    queue: publicQueue(room),
+    queue: queueDetail(room),
   });
   io.to(hostChannel(room.sessionId)).emit('leaderboard:update', leaderboard(room));
   io.to(hostChannel(room.sessionId)).emit('latency:update', [...room.latencyByName.entries()]);
   io.to(hostChannel(room.sessionId)).emit('difficulty:update', room.difficulty);
-  io.to(hostChannel(room.sessionId)).emit('queue:detail', hostQueueDetail(room));
   io.to(hostChannel(room.sessionId)).emit('settings:update', {
     mathEnabled: room.mathEnabled,
     timeLimitSeconds: room.timeLimitMs ? room.timeLimitMs / 1000 : null,

@@ -92,9 +92,7 @@ socket.on('state:update', ({ armed, winner, queue }) => {
   } else {
     roundStatus.textContent = 'Round not armed. Click "Start / Next Round" when ready.';
   }
-});
 
-socket.on('queue:detail', (queue) => {
   hostQueueBody.innerHTML = '';
   queue.forEach((entry) => {
     const tr = document.createElement('tr');

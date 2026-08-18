@@ -81,14 +81,14 @@ instead of localhost.
 - **Live ping display**: each player page shows its own round-trip ping to
   the server. This is informational only (visible on the host dashboard too)
   and does not affect who is judged first — see fairness note above.
-- **Tracking**: the host dashboard shows the live buzz-in order for the
-  current round — name, milliseconds behind the first buzz, the exact equation
-  that player was given, what they actually typed in, and the resulting status
-  (correct/wrong/timeout/skipped) — plus a persistent leaderboard (total buzzes,
-  wins, misses) across rounds. The equation/answer detail is host-only and never
-  sent to players, so buzzing in doesn't leak anyone else's equation or answer.
-  Players see the same "Live Buzz Order" table on their own page (rank, name,
-  ms behind first, status) minus the equation/answer columns.
+- **Tracking**: both the host dashboard and every player's own page show the same
+  "Live Buzz Order" table for the current round — name, milliseconds behind the
+  first buzz, the exact equation each buzzer was given, what they actually typed
+  in, and the resulting status (correct/wrong/timeout/skipped). This is safe to
+  share with players because each buzzer gets their own independently-random
+  equation (never reused), so seeing someone else's doesn't help you guess a
+  future one. The host dashboard additionally has a persistent leaderboard
+  (total buzzes, wins, misses) across rounds, which stays host-only.
 - **Reset controls** (host dashboard):
   - *Start / Next Round* — arms the buzzer for a new question, clears the
     current round's queue, keeps the leaderboard.
