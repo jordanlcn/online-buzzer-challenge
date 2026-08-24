@@ -37,8 +37,8 @@ instead of localhost.
 - **Configurable time limit** (host dashboard, only relevant while Math Challenge
   is on): a number input (2-60 seconds) for how long a buzzer has to answer their
   equation. Leave it blank and the field's placeholder shows the suggested time
-  for the current difficulty (`SUGGESTED_SECONDS` in `server.js`: Easy 5s, Medium
-  8s, Hardest 12s) — that suggested value is what's actually used until the host
+  for the current difficulty (`SUGGESTED_SECONDS` in `server.js`: Easy 8s, Medium
+  12s, Hardest 18s) — that suggested value is what's actually used until the host
   types a custom number. Changing difficulty while the field is blank updates the
   placeholder/suggestion automatically.
 - **Rooms**: opening the host dashboard always creates a fresh room with a random
@@ -90,9 +90,17 @@ instead of localhost.
   their timer cancelled, their answer no longer accepted even if they submit
   one), and any brand-new buzz attempt after that point is rejected outright.
 - **Difficulty control** (host dashboard): pick *Easy* (both numbers single-digit,
-  0-9), *Medium* (each number independently single- or two-digit, so equations
-  mix), or *Hardest* (both numbers two-digit, 10-99). Takes effect on the next
-  equation issued; persists across round resets until changed again.
+  0-9, the default for a new room), *Medium* (each number independently single-
+  or two-digit, so equations mix), or *Hardest* (both numbers two-digit, 10-99).
+- **Mid-round setting changes never retroactively affect the round in progress**:
+  Difficulty and Time Limit can be changed at any time, including while a round
+  is live — the controls are never blocked or disabled. But whichever
+  difficulty/time-limit were in effect at the moment a round was armed (or
+  reset) are what that round keeps using for every equation issued during it,
+  even if the host changes the dropdown/input mid-round. Changes the host makes
+  take effect starting with the *next* "Start / Next Round" or "Reset Round"
+  click - so a host can freely set up the next round's difficulty while the
+  current one is still being played.
 - **Live ping display**: each player page shows its own round-trip ping to
   the server. This is informational only (visible on the host dashboard too)
   and does not affect who is judged first — see fairness note above.

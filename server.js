@@ -19,7 +19,7 @@ const MIN_TIME_LIMIT_SECONDS = 2;
 const MAX_TIME_LIMIT_SECONDS = 60;
 // Suggested math-check time limits shown as placeholder text on the host
 // dashboard, and used automatically whenever the host hasn't set a custom value.
-const SUGGESTED_SECONDS = { easy: 5, medium: 8, hard: 12 };
+const SUGGESTED_SECONDS = { easy: 8, medium: 12, hard: 18 };
 const REQUIRED_COMPANY = 'five9'; // lightweight gate: only this company name is accepted for now
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -192,11 +192,22 @@ function broadcastState(room) {
   }
 }
 
+// The host can change Difficulty/Time Limit at any time, including while a
+// round is in progress - those live settings just aren't blocked. But the
+// round itself locks in whatever they were at the moment it started
+// (arm / reset), so a mid-round change never retroactively affects equations
+// already handed out - it only takes effect from the NEXT round onward.
 function clearRound(room) {
   room.round.queue.forEach((entry) => {
     if (entry.timer) clearTimeout(entry.timer);
   });
-  room.round = { armed: room.round.armed, queue: [], winner: null };
+  room.round = {
+    armed: room.round.armed,
+    queue: [],
+    winner: null,
+    difficulty: room.difficulty,
+    timeLimitMs: room.timeLimitMs,
+  };
 }
 
 function correctCount(room) {
@@ -204,12 +215,12 @@ function correctCount(room) {
 }
 
 function effectiveTimeoutMs(room) {
-  return room.timeLimitMs || SUGGESTED_SECONDS[room.difficulty] * 1000;
+  return room.round.timeLimitMs || SUGGESTED_SECONDS[room.round.difficulty] * 1000;
 }
 
 function issueChallenge(room, entry) {
   const timeoutMs = effectiveTimeoutMs(room);
-  entry.equation = makeEquation(room.difficulty);
+  entry.equation = makeEquation(room.round.difficulty);
   entry.status = 'pending';
   entry.deadline = Date.now() + timeoutMs;
   const socket = io.sockets.sockets.get(entry.socketId);
@@ -331,13 +342,13 @@ io.on('connection', (socket) => {
       playerTokens: new Map(), // token -> name, so a dropped player can silently resume
       statsByName: new Map(),
       latencyByName: new Map(),
-      difficulty: 'medium',
+      difficulty: 'easy',
       mathEnabled: true,
       timeLimitMs: null, // null = use the suggested time for the current difficulty
       showLiveStats: false, // whether players can see the leaderboard on their own page
       hostConnected: true,
       hostGraceTimer: null,
-      round: { armed: false, queue: [], winner: null },
+      round: { armed: false, queue: [], winner: null, difficulty: 'easy', timeLimitMs: null },
       createdAt: Date.now(),
       lastActivity: Date.now(),
     };
