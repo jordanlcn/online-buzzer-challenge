@@ -215,13 +215,16 @@ socket.on('state:update', ({ armed, winner, queue }) => {
     closeMathOverlay();
   }
 
-  renderQueue(queue);
+  renderQueue(queue, winner);
 });
 
-function renderQueue(queue) {
+function renderQueue(queue, winner) {
   queueBody.innerHTML = '';
   queue.forEach((entry) => {
-    const statusLabel =
+    // The round's winner is whoever buzzed in first AND answered correctly -
+    // there's only ever one, since a player can only buzz once per round.
+    const isWinner = winner && entry.name === winner && entry.status === 'correct';
+    const statusLabel = isWinner ? '🏆 correct' :
       entry.status === 'correct' ? '✅ correct' :
       entry.status === 'wrong' ? '✗ wrong answer' :
       entry.status === 'timeout' ? '⏱ too slow' :
@@ -230,7 +233,7 @@ function renderQueue(queue) {
     const equation = entry.equation ?? '-';
     const answer = entry.submittedAnswer ?? '-';
     const tr = document.createElement('tr');
-    tr.className = `q-${entry.status}`;
+    tr.className = isWinner ? 'winner-row' : `q-${entry.status}`;
     tr.innerHTML = `<td>${entry.rank}</td><td>${escapeHtml(entry.name)}</td><td>+${entry.msAfterFirst}ms</td><td>${escapeHtml(equation)}</td><td>${escapeHtml(answer)}</td><td>${statusLabel}</td>`;
     queueBody.appendChild(tr);
   });

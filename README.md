@@ -115,11 +115,12 @@ instead of localhost.
   equation (never reused), so seeing someone else's doesn't help you guess a
   future one. The host dashboard additionally has a persistent leaderboard
   (total buzzes, wins, misses) across rounds.
-- **Winner row highlighted on the host dashboard**: the round's winner - first
-  to buzz AND answer correctly - gets a gold highlight with a 🏆 in their row
-  of the Live Buzz Order table. Since up to 5 people can answer correctly per
-  round, other correct rows stay in normal styling; only the actual winner
-  (matched against `state:update`'s `winner` field) gets the highlight.
+- **Winner row highlighted for everyone**: the round's winner - first to buzz
+  AND answer correctly - gets a gold highlight with a 🏆 in their row of the
+  Live Buzz Order table, on both the host dashboard and every player's own
+  page. Since up to 5 people can answer correctly per round, other correct
+  rows stay in normal styling; only the actual winner (matched against
+  `state:update`'s `winner` field) gets the highlight.
 - **"Show Live Stats to Players" toggle** (host dashboard): off by default. When
   the host switches it on, that same leaderboard (name, wins, total buzzes,
   misses) also appears in a "Live Stats" panel on every player's own page,
