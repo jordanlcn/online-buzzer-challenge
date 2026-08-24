@@ -236,3 +236,10 @@ hr { border: none; border-top: 1px solid #334155; margin: 20px 0; }
 .players-list { color: var(--muted); font-size: 14px; line-height: 1.6; word-break: break-word; }
 .queue-table { width: 100%; border-collapse: collapse; }
 .queue-table th, .queue-table td { text-align: left; padding: 8px; border-bottom: 1px solid #334155; font-size: 14px; }
+
+.winner-row td {
+  background: #713f12;
+  color: #fde68a;
+  font-weight: 700;
+}
+.winner-row td:first-child { border-left: 4px solid #fde68a; }

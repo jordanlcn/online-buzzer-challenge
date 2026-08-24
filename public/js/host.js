@@ -141,10 +141,15 @@ socket.on('state:update', ({ armed, winner, queue }) => {
 
   hostQueueBody.innerHTML = '';
   queue.forEach((entry) => {
+    // The round's winner is whoever buzzed in first AND answered correctly -
+    // there's only ever one, since a player can only buzz once per round.
+    const isWinner = winner && entry.name === winner && entry.status === 'correct';
     const tr = document.createElement('tr');
+    tr.className = isWinner ? 'winner-row' : '';
     const equation = entry.equation ?? '-';
     const answer = entry.submittedAnswer ?? '-';
-    tr.innerHTML = `<td>${entry.rank}</td><td>${escapeHtml(entry.name)}</td><td>+${entry.msAfterFirst}ms</td><td>${escapeHtml(equation)}</td><td>${escapeHtml(answer)}</td><td>${entry.status}</td>`;
+    const statusLabel = isWinner ? `🏆 ${entry.status}` : entry.status;
+    tr.innerHTML = `<td>${entry.rank}</td><td>${escapeHtml(entry.name)}</td><td>+${entry.msAfterFirst}ms</td><td>${escapeHtml(equation)}</td><td>${escapeHtml(answer)}</td><td>${statusLabel}</td>`;
     hostQueueBody.appendChild(tr);
   });
 });
