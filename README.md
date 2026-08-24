@@ -121,6 +121,14 @@ instead of localhost.
   page. Since up to 5 people can answer correctly per round, other correct
   rows stay in normal styling; only the actual winner (matched against
   `state:update`'s `winner` field) gets the highlight.
+- **No spoilers on the player side**: a player only sees who won (the banner
+  text and the gold row highlight) once *their own* buzz attempt this round
+  has reached a final outcome - they buzzed and got marked correct, wrong,
+  timed out, or skipped, or they never got a chance to buzz and the buzzer's
+  no longer open to them. While they're still mid-challenge, the banner just
+  shows generic progress ("Buzzer is live," or the correct-count) instead of
+  revealing who already answered correctly. The host dashboard has no such
+  suppression - it always shows the real-time winner immediately.
 - **"Show Live Stats to Players" toggle** (host dashboard): off by default. When
   the host switches it on, that same leaderboard (name, wins, total buzzes,
   misses) also appears in a "Live Stats" panel on every player's own page,

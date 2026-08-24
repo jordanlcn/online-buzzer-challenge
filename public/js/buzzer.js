@@ -193,9 +193,20 @@ socket.on('state:update', ({ armed, winner, queue }) => {
   const correctCount = queue.filter((e) => e.status === 'correct').length;
   const full = correctCount >= MAX_WINNERS_PER_ROUND;
 
-  if (winner) {
+  // Don't spoil who won for a player who's still in the middle of their own
+  // buzz attempt - only reveal the winner (banner text + the gold highlight
+  // in the table) once THEIR OWN participation this round has reached a
+  // final outcome: they buzzed and got skipped/wrong/correct/timed out, or
+  // they never got a chance to buzz and the buzzer's no longer open to them.
+  const mine = queue.find((e) => e.name === name);
+  const myTurnDone = mine
+    ? ['correct', 'wrong', 'timeout', 'skipped'].includes(mine.status)
+    : !armed || full;
+  const revealedWinner = myTurnDone ? winner : null;
+
+  if (revealedWinner) {
     const suffix = armed && !full ? ` — buzzer still open (${correctCount}/${MAX_WINNERS_PER_ROUND} correct so far)` : '';
-    statusBanner.textContent = `🏆 ${winner} answered first!${suffix}`;
+    statusBanner.textContent = `🏆 ${revealedWinner} answered first!${suffix}`;
     statusBanner.className = 'status-banner status-winner';
   } else if (armed) {
     statusBanner.textContent = full
@@ -210,12 +221,11 @@ socket.on('state:update', ({ armed, winner, queue }) => {
   buzzBtn.disabled = !armed || hasBuzzedThisRound || full;
 
   // If we no longer have a pending entry in the queue, close any open math overlay.
-  const mine = queue.find((e) => e.name === name);
   if (!mine || mine.status !== 'pending') {
     closeMathOverlay();
   }
 
-  renderQueue(queue, winner);
+  renderQueue(queue, revealedWinner);
 });
 
 function renderQueue(queue, winner) {
