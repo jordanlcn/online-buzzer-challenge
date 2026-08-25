@@ -27,6 +27,7 @@ const playersCount = document.getElementById('playersCount');
 const playersList = document.getElementById('playersList');
 
 let latestLatency = new Map();
+let latestWinner = null;
 
 // --- company-name gate ---
 // Lightweight access control: only hosts who type the right company name can
@@ -129,6 +130,7 @@ closeRoomConfirmBtn.addEventListener('click', () => {
 const MAX_WINNERS_PER_ROUND = 5; // matches server.js MAX_WINNERS_PER_ROUND
 
 socket.on('state:update', ({ armed, winner, queue }) => {
+  latestWinner = winner;
   const correctCount = queue.filter((e) => e.status === 'correct').length;
   const progress = `${correctCount}/${MAX_WINNERS_PER_ROUND} correct`;
   if (winner) {
@@ -138,12 +140,16 @@ socket.on('state:update', ({ armed, winner, queue }) => {
   } else {
     roundStatus.textContent = 'Round not armed. Click "Start / Next Round" when ready.';
   }
+});
 
+// Host-only: includes the equation and what each buzzer actually answered.
+// Never sent to players, since everyone in a round shares the same equation.
+socket.on('queue:detail', (queue) => {
   hostQueueBody.innerHTML = '';
   queue.forEach((entry) => {
     // The round's winner is whoever buzzed in first AND answered correctly -
     // there's only ever one, since a player can only buzz once per round.
-    const isWinner = winner && entry.name === winner && entry.status === 'correct';
+    const isWinner = latestWinner && entry.name === latestWinner && entry.status === 'correct';
     const tr = document.createElement('tr');
     tr.className = isWinner ? 'winner-row' : '';
     const equation = entry.equation ?? '-';

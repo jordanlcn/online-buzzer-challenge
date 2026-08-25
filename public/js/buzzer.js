@@ -240,11 +240,9 @@ function renderQueue(queue, winner) {
       entry.status === 'timeout' ? '⏱ too slow' :
       entry.status === 'pending' ? 'solving...' :
       entry.status === 'skipped' ? 'buzzer filled up' : 'waiting';
-    const equation = entry.equation ?? '-';
-    const answer = entry.submittedAnswer ?? '-';
     const tr = document.createElement('tr');
     tr.className = isWinner ? 'winner-row' : `q-${entry.status}`;
-    tr.innerHTML = `<td>${entry.rank}</td><td>${escapeHtml(entry.name)}</td><td>+${entry.msAfterFirst}ms</td><td>${escapeHtml(equation)}</td><td>${escapeHtml(answer)}</td><td>${statusLabel}</td>`;
+    tr.innerHTML = `<td>${entry.rank}</td><td>${escapeHtml(entry.name)}</td><td>+${entry.msAfterFirst}ms</td><td>${statusLabel}</td>`;
     queueBody.appendChild(tr);
   });
 }

@@ -140,12 +140,24 @@ function connectedPlayersList(room) {
   return [...room.players.values()].map((p) => p.name).sort((a, b) => a.localeCompare(b));
 }
 
-// Shared by both the host dashboard and every player's own page. Note: every
-// buzzer in a round gets the SAME equation (see clearRound), so once one
-// person's answer is resolved and visible here, anyone else still solving
-// can read it off this table - that's an accepted tradeoff of a shared
-// question, not a bug.
-function queueDetail(room) {
+// Player-facing queue: deliberately excludes the equation/submitted answer.
+// Now that every buzzer in a round shares the SAME equation (see clearRound),
+// showing anyone's equation/answer to players would let anyone still solving
+// just read the correct answer off the table - so that detail is host-only.
+function publicQueue(room) {
+  const first = room.round.queue[0];
+  const baseTime = first ? first.serverTime : null;
+  return room.round.queue.map((entry, i) => ({
+    name: entry.name,
+    rank: i + 1,
+    status: entry.status,
+    msAfterFirst: baseTime === null ? 0 : entry.serverTime - baseTime,
+  }));
+}
+
+// Host-only: same as publicQueue plus the actual equation and what each
+// buzzer answered. Never sent to players (see publicQueue above).
+function hostQueueDetail(room) {
   const first = room.round.queue[0];
   const baseTime = first ? first.serverTime : null;
   return room.round.queue.map((entry, i) => ({
@@ -172,8 +184,9 @@ function broadcastState(room) {
   io.to(roomChannel(room.sessionId)).emit('state:update', {
     armed: room.round.armed,
     winner: room.round.winner,
-    queue: queueDetail(room),
+    queue: publicQueue(room),
   });
+  io.to(hostChannel(room.sessionId)).emit('queue:detail', hostQueueDetail(room));
   io.to(hostChannel(room.sessionId)).emit('leaderboard:update', leaderboard(room));
   io.to(hostChannel(room.sessionId)).emit('players:update', connectedPlayersList(room));
   io.to(hostChannel(room.sessionId)).emit('latency:update', [...room.latencyByName.entries()]);

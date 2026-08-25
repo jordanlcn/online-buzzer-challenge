@@ -92,13 +92,10 @@ instead of localhost.
   accepted even if they submit one), and any brand-new buzz attempt after
   that point is rejected outright. A new round (next arm/reset) always gets a
   fresh equation.
-  - **Tradeoff to know about**: because everyone in a round shares the same
-    problem, the equation/answer visibility described below means anyone
-    still solving can read the correct answer off the table the moment the
-    first person's result appears. That's an accepted consequence of a shared
-    question, not a bug — if it matters for how you're running the game,
-    consider hiding the Equation/Answer columns from players, or turning off
-    Math Challenge entirely for a "who buzzes first wins" mode instead.
+  - Since everyone in a round shares the same problem, the actual equation and
+    what each buzzer answered are **host-only** (see Tracking below) — a
+    player never receives that data at all, not even hidden in the page, so
+    there's nothing to read off the table or find via devtools while solving.
 - **Difficulty control** (host dashboard): pick *Easy* (both numbers single-digit,
   0-9, the default for a new room), *Medium* (each number independently single-
   or two-digit, so equations mix), or *Hardest* (both numbers two-digit, 10-99).
@@ -125,12 +122,15 @@ instead of localhost.
   unlocks it, using a fresh clock rather than replaying something scheduled
   while frozen (that mismatch is what caused garbled/delayed playback in
   Firefox and silence in Edge in earlier testing).
-- **Tracking**: both the host dashboard and every player's own page show the same
-  "Live Buzz Order" table for the current round — name, milliseconds behind the
-  first buzz, the equation (same one for everyone this round), what they
-  actually typed in, and the resulting status (correct/wrong/timeout/skipped).
-  See the shared-equation tradeoff noted above. The host dashboard additionally
-  has a persistent leaderboard (total buzzes, wins, misses) across rounds.
+- **Tracking**: both the host dashboard and every player's own page show a
+  "Live Buzz Order" table for the current round — name, milliseconds behind
+  the first buzz, and the resulting status (correct/wrong/timeout/skipped).
+  The host dashboard's version additionally includes the actual equation and
+  what each buzzer typed in (`queue:detail`, a host-only event) — withheld
+  from players since everyone in a round shares the same equation, so seeing
+  anyone's answer would spoil it for whoever's still solving. The host
+  dashboard also has a persistent leaderboard (total buzzes, wins, misses)
+  across rounds.
 - **Winner row highlighted for everyone**: the round's winner - first to buzz
   AND answer correctly - gets a gold highlight with a 🏆 in their row of the
   Live Buzz Order table, on both the host dashboard and every player's own
