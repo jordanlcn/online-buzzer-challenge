@@ -25,7 +25,7 @@
       <div class="room-code-box">
         <span class="room-code-label">Room Code</span>
         <span id="roomCodeDisplay" class="room-code-value">------</span>
-        <button id="rerollBtn" class="btn">New Code</button>
+        <button id="rerollBtn" class="btn" data-tip="Generates a new room code. Players who already joined stay connected - it only changes what code new joiners need to type.">New Code</button>
       </div>
     </header>
 
@@ -33,17 +33,17 @@
       <section class="control-group">
         <h3 class="control-group-title">Round Settings</h3>
         <div class="control-row">
-          <label class="difficulty-label" for="difficultySelect">Difficulty
+          <label class="difficulty-label" for="difficultySelect" data-tip="Sets how hard the math equation is: Easy (1 digit), Medium (mixed), or Hardest (2 digit). Takes effect starting with the next round.">Difficulty
             <select id="difficultySelect">
               <option value="easy">Easy (1 digit)</option>
               <option value="medium">Medium (mix of 1 &amp; 2 digit)</option>
               <option value="hard">Hardest (2 digit)</option>
             </select>
           </label>
-          <label class="difficulty-label" for="mathEnabledToggle">Math Challenge
+          <label class="difficulty-label" for="mathEnabledToggle" data-tip="Turns the math equation on or off. When off, buzzing in successfully is an instant win - no question to answer.">Math Challenge
             <input id="mathEnabledToggle" type="checkbox" checked />
           </label>
-          <label class="difficulty-label" for="timeLimitInput">Time Limit (sec)
+          <label class="difficulty-label" for="timeLimitInput" data-tip="How many seconds a buzzer gets to answer the equation. Leave blank to use the suggested time for the current difficulty.">Time Limit (sec)
             <input id="timeLimitInput" type="number" min="2" max="60" step="1" placeholder="8" />
           </label>
         </div>
@@ -52,10 +52,10 @@
       <section class="control-group">
         <h3 class="control-group-title">Player Options</h3>
         <div class="control-row">
-          <label class="difficulty-label" for="showLiveStatsToggle">Show Live Stats to Players
+          <label class="difficulty-label" for="showLiveStatsToggle" data-tip="Lets players see the live leaderboard (wins, total buzzes, misses) on their own screen.">Show Live Stats to Players
             <input id="showLiveStatsToggle" type="checkbox" />
           </label>
-          <label class="difficulty-label" for="saveSessionDataToggle">Save Session Data
+          <label class="difficulty-label" for="saveSessionDataToggle" data-tip="Records every buzz and answer from this point on, across every round, so you can download a CSV when you end the game.">Save Session Data
             <input id="saveSessionDataToggle" type="checkbox" />
           </label>
         </div>
@@ -64,17 +64,17 @@
       <section class="control-group">
         <h3 class="control-group-title">Round Controls</h3>
         <div class="control-row">
-          <button id="armBtn" class="btn btn-primary">Start / Next Round</button>
-          <button id="resetRoundBtn" class="btn">Reset Round</button>
+          <button id="armBtn" class="btn btn-primary" data-tip="Arms the buzzer for a new question and clears the current round's buzz order. Players can buzz in as soon as this is clicked.">Start / Next Round</button>
+          <button id="resetRoundBtn" class="btn" data-tip="Clears the current round's buzz order without starting a new one - use this to redo the same question.">Reset Round</button>
         </div>
       </section>
 
       <section class="control-group control-group-danger">
         <h3 class="control-group-title">End Session</h3>
         <div class="control-row">
-          <button id="resetAllBtn" class="btn btn-danger">Reset Everything</button>
-          <button id="closeRoomBtn" class="btn btn-danger">Close Room</button>
-          <button id="endGameBtn" class="btn btn-danger">End Game</button>
+          <button id="resetAllBtn" class="btn btn-danger" data-tip="Wipes the leaderboard and all round data. Does NOT close the room or disconnect players.">Reset Everything</button>
+          <button id="closeRoomBtn" class="btn btn-danger" data-tip="Disconnects every player immediately and creates a brand-new room with a new code. Asks for confirmation first.">Close Room</button>
+          <button id="endGameBtn" class="btn btn-danger" data-tip="Ends the game: disconnects everyone, offers a CSV download if Save Session Data is on, then creates a new room. Asks for confirmation first.">End Game</button>
         </div>
       </section>
     </div>
@@ -158,6 +158,8 @@
       </div>
     </div>
   </div>
+
+  <div id="tooltipBubble" class="tooltip-bubble hidden" role="tooltip"></div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/host.js"></script>

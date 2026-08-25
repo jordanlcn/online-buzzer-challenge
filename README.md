@@ -25,6 +25,15 @@ instead of localhost.
   Data), Round Controls (Start/Next Round, Reset Round), and a bordered "End
   Session" group (Reset Everything, Close Room, End Game) — instead of one
   long wrapped row of every control.
+- **Hover tooltips on every host control**: hovering (or focusing via
+  keyboard) any selection or button on the host dashboard for about 2 seconds
+  shows a short explanation of what it does before you click/change it.
+  There's a fixed delay so the tooltips don't flash in and out as the mouse
+  passes over the panel. Implemented client-side only (`data-tip` attributes
+  in `host.html`, a shared `#tooltipBubble` element positioned above the
+  hovered control via `getBoundingClientRect()`, flipping below if there
+  isn't room), not the native `title` attribute, so the delay and styling are
+  fully controlled.
 - **Company-name gate on the host dashboard**: before a host can create a room,
   they must type a company name; only `Five9` (case-insensitive) is accepted right
   now (`REQUIRED_COMPANY` in `server.js`). This is a lightweight gate, not real

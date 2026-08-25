@@ -246,6 +246,48 @@ socket.on('settings:update', ({ mathEnabled, timeLimitSeconds, suggestedSeconds,
   }
 });
 
+// --- hover tooltips for host controls ---
+// Custom (not the native title attribute) so we get an exact 2s delay and
+// consistent styling. Any element with a data-tip attribute qualifies.
+const tooltipBubble = document.getElementById('tooltipBubble');
+let tooltipTimer = null;
+
+function showTooltipFor(el) {
+  const text = el.getAttribute('data-tip');
+  if (!text) return;
+  tooltipBubble.textContent = text;
+  tooltipBubble.classList.remove('hidden');
+  const rect = el.getBoundingClientRect();
+  const bubbleRect = tooltipBubble.getBoundingClientRect();
+  let top = rect.top - bubbleRect.height - 8;
+  if (top < 8) top = rect.bottom + 8; // not enough room above - flip below
+  let left = rect.left;
+  if (left + bubbleRect.width > window.innerWidth - 8) {
+    left = window.innerWidth - bubbleRect.width - 8;
+  }
+  if (left < 8) left = 8;
+  tooltipBubble.style.top = `${top}px`;
+  tooltipBubble.style.left = `${left}px`;
+}
+
+function hideTooltip() {
+  clearTimeout(tooltipTimer);
+  tooltipBubble.classList.add('hidden');
+}
+
+document.querySelectorAll('[data-tip]').forEach((el) => {
+  el.addEventListener('mouseenter', () => {
+    clearTimeout(tooltipTimer);
+    tooltipTimer = setTimeout(() => showTooltipFor(el), 2000);
+  });
+  el.addEventListener('mouseleave', hideTooltip);
+  el.addEventListener('focus', () => {
+    clearTimeout(tooltipTimer);
+    tooltipTimer = setTimeout(() => showTooltipFor(el), 2000);
+  });
+  el.addEventListener('blur', hideTooltip);
+});
+
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
