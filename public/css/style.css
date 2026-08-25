@@ -141,13 +141,22 @@ hr { border: none; border-top: 1px solid #334155; margin: 20px 0; }
 .overlay {
   position: fixed;
   inset: 0;
-  background: var(--bg);
+  background: rgba(0,0,0,0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
 }
 .hidden { display: none !important; }
+
+/* The math question sits in-place on the page (not a full-screen overlay),
+   so the buzz button, banners, and pills above it stay visible. Only the
+   buzz-order table below gets hidden while it's showing (see buzzer.js). */
+.math-panel {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 20px;
+}
 
 .math-card {
   background: var(--card);
