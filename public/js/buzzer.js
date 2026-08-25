@@ -13,6 +13,7 @@ const selfStatusBanner = document.getElementById('selfStatusBanner');
 const hostStatusBanner = document.getElementById('hostStatusBanner');
 const statusBanner = document.getElementById('statusBanner');
 const buzzBtn = document.getElementById('buzzBtn');
+const queuePanel = document.getElementById('queuePanel');
 const queueBody = document.getElementById('queueBody');
 const statsPanel = document.getElementById('statsPanel');
 const statsBody = document.getElementById('statsBody');
@@ -220,8 +221,13 @@ socket.on('state:update', ({ armed, winner, queue }) => {
 
   buzzBtn.disabled = !armed || hasBuzzedThisRound || full;
 
-  // If we no longer have a pending entry in the queue, close any open math overlay.
-  if (!mine || mine.status !== 'pending') {
+  // While this player has a math challenge in flight, hide the buzz-order
+  // table entirely (not just visually cover it) so there's nothing to see
+  // behind the math overlay. It reappears the instant their own attempt is
+  // resolved - answered, wrong, or timed out.
+  const iAmSolving = mine && mine.status === 'pending';
+  queuePanel.classList.toggle('hidden', iAmSolving);
+  if (!iAmSolving) {
     closeMathOverlay();
   }
 

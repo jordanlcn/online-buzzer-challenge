@@ -145,6 +145,12 @@ instead of localhost.
   shows generic progress ("Buzzer is live," or the correct-count) instead of
   revealing who already answered correctly. The host dashboard has no such
   suppression - it always shows the real-time winner immediately.
+- **The Live Buzz Order table is fully hidden while a player is mid-challenge**,
+  not just visually covered — the math overlay's backdrop is fully opaque
+  (not translucent) and the table itself is removed from view for that player
+  until their own attempt resolves (answered or timed out), so there's nothing
+  showing behind the equation, including results from buzzers who already
+  finished.
 - **"Show Live Stats to Players" toggle** (host dashboard): off by default. When
   the host switches it on, that same leaderboard (name, wins, total buzzes,
   misses) also appears in a "Live Stats" panel on every player's own page,
