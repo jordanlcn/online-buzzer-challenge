@@ -12,6 +12,7 @@ const difficultySelect = document.getElementById('difficultySelect');
 const mathEnabledToggle = document.getElementById('mathEnabledToggle');
 const timeLimitInput = document.getElementById('timeLimitInput');
 const showLiveStatsToggle = document.getElementById('showLiveStatsToggle');
+const saveSessionDataToggle = document.getElementById('saveSessionDataToggle');
 const armBtn = document.getElementById('armBtn');
 const resetRoundBtn = document.getElementById('resetRoundBtn');
 const resetAllBtn = document.getElementById('resetAllBtn');
@@ -20,6 +21,10 @@ const closeRoomOverlay = document.getElementById('closeRoomOverlay');
 const closeRoomCode = document.getElementById('closeRoomCode');
 const closeRoomCancelBtn = document.getElementById('closeRoomCancelBtn');
 const closeRoomConfirmBtn = document.getElementById('closeRoomConfirmBtn');
+const endGameBtn = document.getElementById('endGameBtn');
+const csvReadyOverlay = document.getElementById('csvReadyOverlay');
+const csvDismissBtn = document.getElementById('csvDismissBtn');
+const csvDownloadBtn = document.getElementById('csvDownloadBtn');
 const roundStatus = document.getElementById('roundStatus');
 const hostQueueBody = document.getElementById('hostQueueBody');
 const leaderboardBody = document.getElementById('leaderboardBody');
@@ -108,6 +113,8 @@ timeLimitInput.addEventListener('change', () => {
 
 showLiveStatsToggle.addEventListener('change', () => socket.emit('host:setShowLiveStats', showLiveStatsToggle.checked));
 
+saveSessionDataToggle.addEventListener('change', () => socket.emit('host:setSaveSessionData', saveSessionDataToggle.checked));
+
 armBtn.addEventListener('click', () => socket.emit('host:arm'));
 resetRoundBtn.addEventListener('click', () => socket.emit('host:resetRound'));
 resetAllBtn.addEventListener('click', () => {
@@ -125,6 +132,39 @@ closeRoomCancelBtn.addEventListener('click', () => {
 closeRoomConfirmBtn.addEventListener('click', () => {
   closeRoomOverlay.classList.add('hidden');
   socket.emit('host:closeRoom');
+});
+
+endGameBtn.addEventListener('click', () => {
+  if (confirm('End the game and close this room? This cannot be undone.')) {
+    socket.emit('host:endGame');
+  }
+});
+
+// Sent only if "Save Session Data" was on and at least one buzz happened -
+// builds the CSV server-side from the whole session's log, we just offer it
+// as a file download here.
+let pendingCsv = null;
+socket.on('session:csv', ({ csv, filename }) => {
+  pendingCsv = { csv, filename };
+  csvReadyOverlay.classList.remove('hidden');
+});
+csvDismissBtn.addEventListener('click', () => {
+  csvReadyOverlay.classList.add('hidden');
+  pendingCsv = null;
+});
+csvDownloadBtn.addEventListener('click', () => {
+  if (!pendingCsv) return;
+  const blob = new Blob([pendingCsv.csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = pendingCsv.filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  csvReadyOverlay.classList.add('hidden');
+  pendingCsv = null;
 });
 
 const MAX_WINNERS_PER_ROUND = 5; // matches server.js MAX_WINNERS_PER_ROUND
@@ -183,11 +223,12 @@ socket.on('difficulty:update', (level) => {
   difficultySelect.value = level;
 });
 
-socket.on('settings:update', ({ mathEnabled, timeLimitSeconds, suggestedSeconds, showLiveStats }) => {
+socket.on('settings:update', ({ mathEnabled, timeLimitSeconds, suggestedSeconds, showLiveStats, saveSessionData }) => {
   mathEnabledToggle.checked = mathEnabled;
   timeLimitInput.disabled = !mathEnabled;
   timeLimitInput.placeholder = `${suggestedSeconds}s suggested`;
   showLiveStatsToggle.checked = showLiveStats;
+  saveSessionDataToggle.checked = saveSessionData;
   // Only overwrite what's typed if it doesn't already match (avoids cursor jumps while typing).
   const shown = timeLimitSeconds === null ? '' : String(timeLimitSeconds);
   if (document.activeElement !== timeLimitInput) {

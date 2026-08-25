@@ -44,10 +44,14 @@
         <label class="difficulty-label" for="showLiveStatsToggle">Show Live Stats to Players
           <input id="showLiveStatsToggle" type="checkbox" />
         </label>
+        <label class="difficulty-label" for="saveSessionDataToggle">Save Session Data
+          <input id="saveSessionDataToggle" type="checkbox" />
+        </label>
         <button id="armBtn" class="btn btn-primary">Start / Next Round</button>
         <button id="resetRoundBtn" class="btn">Reset Round</button>
         <button id="resetAllBtn" class="btn btn-danger">Reset Everything</button>
         <button id="closeRoomBtn" class="btn btn-danger">Close Room</button>
+        <button id="endGameBtn" class="btn btn-danger">End Game</button>
       </div>
     </header>
 
@@ -96,6 +100,17 @@
       <div class="confirm-actions">
         <button id="closeRoomCancelBtn" class="btn">Cancel</button>
         <button id="closeRoomConfirmBtn" class="btn btn-danger">Close Room</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="csvReadyOverlay" class="overlay hidden">
+    <div class="confirm-card">
+      <h2>Session data ready</h2>
+      <p class="confirm-lead">The game has ended. Download a CSV of every buzz and answer from this session?</p>
+      <div class="confirm-actions">
+        <button id="csvDismissBtn" class="btn">Dismiss</button>
+        <button id="csvDownloadBtn" class="btn btn-primary">Download CSV</button>
       </div>
     </div>
   </div>

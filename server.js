@@ -196,6 +196,7 @@ function broadcastState(room) {
     timeLimitSeconds: room.timeLimitMs ? room.timeLimitMs / 1000 : null,
     suggestedSeconds: SUGGESTED_SECONDS[room.difficulty],
     showLiveStats: room.showLiveStats,
+    saveSessionData: room.saveSessionData,
   });
 
   // Live Stats is host-controlled and opt-in: players only get the leaderboard
@@ -205,6 +206,54 @@ function broadcastState(room) {
   if (room.showLiveStats) {
     io.to(roomChannel(room.sessionId)).emit('stats:update', leaderboard(room));
   }
+}
+
+// Opt-in session recording: if the host has "Save Session Data" switched on,
+// every buzzer from the round that's ending gets appended to room.sessionLog
+// before its queue is discarded. Off by default, and rounds that happened
+// before the host turned it on aren't retroactively recovered - only what's
+// still sitting in room.round.queue at flush time gets captured.
+function flushRoundToLog(room) {
+  if (!room.saveSessionData || room.round.queue.length === 0) return;
+  const first = room.round.queue[0];
+  room.round.queue.forEach((entry, i) => {
+    room.sessionLog.push({
+      round: room.roundNumber,
+      rank: i + 1,
+      name: entry.name,
+      serverTime: entry.serverTime,
+      msAfterFirst: first ? entry.serverTime - first.serverTime : 0,
+      equation: !room.mathEnabled
+        ? 'N/A (math off)'
+        : entry.equation
+        ? `${entry.equation.a} ${entry.equation.op} ${entry.equation.b}`
+        : '',
+      submittedAnswer: entry.submittedAnswer ?? '',
+      status: entry.status,
+      isWinner: !!room.round.winner && room.round.winner === entry.name && entry.status === 'correct',
+    });
+  });
+}
+
+function csvEscape(value) {
+  const s = String(value ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function buildSessionCsv(room) {
+  const header = ['Round', 'Rank', 'Player', 'Timestamp', 'MsAfterFirstBuzz', 'Equation', 'AnswerGiven', 'Status', 'Winner'];
+  const rows = room.sessionLog.map((e) => [
+    e.round,
+    e.rank,
+    e.name,
+    new Date(e.serverTime).toISOString(),
+    e.msAfterFirst,
+    e.equation,
+    e.submittedAnswer,
+    e.status,
+    e.isWinner ? 'YES' : '',
+  ]);
+  return [header, ...rows].map((row) => row.map(csvEscape).join(',')).join('\n');
 }
 
 // The host can change Difficulty/Time Limit at any time, including while a
@@ -217,9 +266,11 @@ function broadcastState(room) {
 // round, not one per buzz - generated fresh right here so a new round always
 // gets a new problem.
 function clearRound(room) {
+  flushRoundToLog(room); // persist the round that's ending, if recording is on
   room.round.queue.forEach((entry) => {
     if (entry.timer) clearTimeout(entry.timer);
   });
+  room.roundNumber = (room.roundNumber || 0) + 1;
   const difficulty = room.difficulty;
   room.round = {
     armed: room.round.armed,
@@ -367,6 +418,9 @@ io.on('connection', (socket) => {
       mathEnabled: true,
       timeLimitMs: null, // null = use the suggested time for the current difficulty
       showLiveStats: false, // whether players can see the leaderboard on their own page
+      saveSessionData: false, // off by default - whether to keep a downloadable log of every buzz/answer
+      sessionLog: [],
+      roundNumber: 0,
       hostConnected: true,
       hostGraceTimer: null,
       round: { armed: false, queue: [], winner: null, difficulty: 'easy', timeLimitMs: null },
@@ -513,6 +567,14 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
+  safeOn(socket, 'host:setSaveSessionData', (enabled) => {
+    const room = getHostRoom(socket);
+    if (!room) return;
+    room.saveSessionData = !!enabled;
+    touch(room);
+    broadcastState(room);
+  });
+
   safeOn(socket, 'host:setTimeLimit', ({ seconds } = {}) => {
     const room = getHostRoom(socket);
     if (!room) return;
@@ -560,6 +622,22 @@ io.on('connection', (socket) => {
   safeOn(socket, 'host:closeRoom', () => {
     const room = getHostRoom(socket);
     if (!room) return;
+    closeRoom(room.sessionId, 'host_closed');
+  });
+
+  // Deliberate "we're done" action: flushes whatever's left of the current
+  // round into the session log, hands the host a CSV of the whole session if
+  // they had recording switched on at any point, then closes the room.
+  safeOn(socket, 'host:endGame', () => {
+    const room = getHostRoom(socket);
+    if (!room) return;
+    flushRoundToLog(room);
+    if (room.saveSessionData && room.sessionLog.length > 0) {
+      socket.emit('session:csv', {
+        csv: buildSessionCsv(room),
+        filename: `buzzer-session-${room.joinCode}.csv`,
+      });
+    }
     closeRoom(room.sessionId, 'host_closed');
   });
 

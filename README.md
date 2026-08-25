@@ -168,6 +168,21 @@ instead of localhost.
     disconnected, the current code deactivated, the in-progress round and its
     buzz order discarded, this room's leaderboard permanently erased, a fresh
     room created immediately after) before anything actually happens.
+  - *End Game* — the same underlying close as *Close Room*, plus a session
+    export step: see "Save Session Data" below.
+- **"Save Session Data" toggle + "End Game" button** (host dashboard): off by
+  default. When switched on, every buzz and answer from that point forward —
+  across every round, not just the current one — is appended to a per-room
+  log (round number, rank, player, server timestamp, ms behind the first
+  buzz, the equation, what they answered, the result, and whether they were
+  that round's winner). Clicking *End Game* asks for confirmation, flushes
+  whatever's left of the current round into that log, and — only if
+  recording was ever turned on and at least one buzz happened — shows a
+  "Session data ready" prompt with a **Download CSV** button before closing
+  the room. If recording was never enabled, End Game just closes the room
+  directly with no prompt, since there's nothing to export. Because there's
+  no database, the log only exists in that room's memory for its lifetime —
+  download it before ending the game, since closing the room discards it.
 - **Duplicate names are rejected within a room** (case-insensitive) — if
   "Alice" is already connected, a second person can't also join as "alice."
   Without this, two players sharing a name would silently merge into one
