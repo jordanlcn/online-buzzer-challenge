@@ -183,6 +183,11 @@ instead of localhost.
   directly with no prompt, since there's nothing to export. Because there's
   no database, the log only exists in that room's memory for its lifetime —
   download it before ending the game, since closing the room discards it.
+  The exported Equation column reads like `9 - 6 = ?` rather than bare
+  `9 - 6` on purpose — Excel/Sheets auto-detect date-shaped text and will
+  silently reformat something like "9-6" into a date when the CSV is
+  opened; the "= ?" suffix keeps it readable while no longer matching any
+  date pattern.
 - **Duplicate names are rejected within a room** (case-insensitive) — if
   "Alice" is already connected, a second person can't also join as "alice."
   Without this, two players sharing a name would silently merge into one

@@ -223,10 +223,14 @@ function flushRoundToLog(room) {
       name: entry.name,
       serverTime: entry.serverTime,
       msAfterFirst: first ? entry.serverTime - first.serverTime : 0,
+      // Appending "= ?" is deliberate: a bare "9 - 6" looks enough like a
+      // date to Excel/Sheets that opening the CSV silently reformats it
+      // (e.g. into "Sep-06"). The suffix keeps it human-readable while no
+      // longer matching any date pattern, so it opens as plain text.
       equation: !room.mathEnabled
         ? 'N/A (math off)'
         : entry.equation
-        ? `${entry.equation.a} ${entry.equation.op} ${entry.equation.b}`
+        ? `${entry.equation.a} ${entry.equation.op} ${entry.equation.b} = ?`
         : '',
       submittedAnswer: entry.submittedAnswer ?? '',
       status: entry.status,
