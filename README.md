@@ -20,6 +20,11 @@ instead of localhost.
 
 ## How it works
 
+- **Host dashboard controls are grouped**: Round Settings (Difficulty, Math
+  Challenge, Time Limit), Player Options (Show Live Stats, Save Session
+  Data), Round Controls (Start/Next Round, Reset Round), and a bordered "End
+  Session" group (Reset Everything, Close Room, End Game) — instead of one
+  long wrapped row of every control.
 - **Company-name gate on the host dashboard**: before a host can create a room,
   they must type a company name; only `Five9` (case-insensitive) is accepted right
   now (`REQUIRED_COMPANY` in `server.js`). This is a lightweight gate, not real
@@ -169,7 +174,10 @@ instead of localhost.
     buzz order discarded, this room's leaderboard permanently erased, a fresh
     room created immediately after) before anything actually happens.
   - *End Game* — the same underlying close as *Close Room*, plus a session
-    export step: see "Save Session Data" below.
+    export step: see "Save Session Data" below. Also opens its own
+    confirmation dialog first, spelling out exactly what will happen
+    (including whether a CSV prompt is coming, based on whether Save Session
+    Data is on) before anything actually happens.
 - **"Save Session Data" toggle + "End Game" button** (host dashboard): off by
   default. When switched on, every buzz and answer from that point forward —
   across every round, not just the current one — is appended to a per-room

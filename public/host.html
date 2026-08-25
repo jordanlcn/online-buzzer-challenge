@@ -27,33 +27,57 @@
         <span id="roomCodeDisplay" class="room-code-value">------</span>
         <button id="rerollBtn" class="btn">New Code</button>
       </div>
-      <div class="host-controls">
-        <label class="difficulty-label" for="difficultySelect">Difficulty
-          <select id="difficultySelect">
-            <option value="easy">Easy (1 digit)</option>
-            <option value="medium">Medium (mix of 1 &amp; 2 digit)</option>
-            <option value="hard">Hardest (2 digit)</option>
-          </select>
-        </label>
-        <label class="difficulty-label" for="mathEnabledToggle">Math Challenge
-          <input id="mathEnabledToggle" type="checkbox" checked />
-        </label>
-        <label class="difficulty-label" for="timeLimitInput">Time Limit (sec)
-          <input id="timeLimitInput" type="number" min="2" max="60" step="1" placeholder="8" />
-        </label>
-        <label class="difficulty-label" for="showLiveStatsToggle">Show Live Stats to Players
-          <input id="showLiveStatsToggle" type="checkbox" />
-        </label>
-        <label class="difficulty-label" for="saveSessionDataToggle">Save Session Data
-          <input id="saveSessionDataToggle" type="checkbox" />
-        </label>
-        <button id="armBtn" class="btn btn-primary">Start / Next Round</button>
-        <button id="resetRoundBtn" class="btn">Reset Round</button>
-        <button id="resetAllBtn" class="btn btn-danger">Reset Everything</button>
-        <button id="closeRoomBtn" class="btn btn-danger">Close Room</button>
-        <button id="endGameBtn" class="btn btn-danger">End Game</button>
-      </div>
     </header>
+
+    <div class="control-panel">
+      <section class="control-group">
+        <h3 class="control-group-title">Round Settings</h3>
+        <div class="control-row">
+          <label class="difficulty-label" for="difficultySelect">Difficulty
+            <select id="difficultySelect">
+              <option value="easy">Easy (1 digit)</option>
+              <option value="medium">Medium (mix of 1 &amp; 2 digit)</option>
+              <option value="hard">Hardest (2 digit)</option>
+            </select>
+          </label>
+          <label class="difficulty-label" for="mathEnabledToggle">Math Challenge
+            <input id="mathEnabledToggle" type="checkbox" checked />
+          </label>
+          <label class="difficulty-label" for="timeLimitInput">Time Limit (sec)
+            <input id="timeLimitInput" type="number" min="2" max="60" step="1" placeholder="8" />
+          </label>
+        </div>
+      </section>
+
+      <section class="control-group">
+        <h3 class="control-group-title">Player Options</h3>
+        <div class="control-row">
+          <label class="difficulty-label" for="showLiveStatsToggle">Show Live Stats to Players
+            <input id="showLiveStatsToggle" type="checkbox" />
+          </label>
+          <label class="difficulty-label" for="saveSessionDataToggle">Save Session Data
+            <input id="saveSessionDataToggle" type="checkbox" />
+          </label>
+        </div>
+      </section>
+
+      <section class="control-group">
+        <h3 class="control-group-title">Round Controls</h3>
+        <div class="control-row">
+          <button id="armBtn" class="btn btn-primary">Start / Next Round</button>
+          <button id="resetRoundBtn" class="btn">Reset Round</button>
+        </div>
+      </section>
+
+      <section class="control-group control-group-danger">
+        <h3 class="control-group-title">End Session</h3>
+        <div class="control-row">
+          <button id="resetAllBtn" class="btn btn-danger">Reset Everything</button>
+          <button id="closeRoomBtn" class="btn btn-danger">Close Room</button>
+          <button id="endGameBtn" class="btn btn-danger">End Game</button>
+        </div>
+      </section>
+    </div>
 
     <div id="roundStatus" class="round-status">Round not armed.</div>
 
@@ -100,6 +124,26 @@
       <div class="confirm-actions">
         <button id="closeRoomCancelBtn" class="btn">Cancel</button>
         <button id="closeRoomConfirmBtn" class="btn btn-danger">Close Room</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="endGameOverlay" class="overlay hidden">
+    <div class="confirm-card">
+      <h2>End this game?</h2>
+      <p class="confirm-lead">This will immediately:</p>
+      <ul class="confirm-list">
+        <li>End the round in progress, if any</li>
+        <li>Disconnect every player currently in the room</li>
+        <li>Deactivate room code <strong id="endGameRoomCode">------</strong> — it will stop working</li>
+        <li>If <strong>Save Session Data</strong> is on: show a prompt to download a CSV of every buzz and answer from this session</li>
+        <li>If <strong>Save Session Data</strong> is off: nothing from this session is saved anywhere</li>
+        <li>Create a brand-new room with a new code right after, for you to share again</li>
+      </ul>
+      <p class="confirm-warning">This cannot be undone.</p>
+      <div class="confirm-actions">
+        <button id="endGameCancelBtn" class="btn">Cancel</button>
+        <button id="endGameConfirmBtn" class="btn btn-danger">End Game</button>
       </div>
     </div>
   </div>

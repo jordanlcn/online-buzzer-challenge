@@ -22,6 +22,10 @@ const closeRoomCode = document.getElementById('closeRoomCode');
 const closeRoomCancelBtn = document.getElementById('closeRoomCancelBtn');
 const closeRoomConfirmBtn = document.getElementById('closeRoomConfirmBtn');
 const endGameBtn = document.getElementById('endGameBtn');
+const endGameOverlay = document.getElementById('endGameOverlay');
+const endGameRoomCode = document.getElementById('endGameRoomCode');
+const endGameCancelBtn = document.getElementById('endGameCancelBtn');
+const endGameConfirmBtn = document.getElementById('endGameConfirmBtn');
 const csvReadyOverlay = document.getElementById('csvReadyOverlay');
 const csvDismissBtn = document.getElementById('csvDismissBtn');
 const csvDownloadBtn = document.getElementById('csvDownloadBtn');
@@ -135,9 +139,15 @@ closeRoomConfirmBtn.addEventListener('click', () => {
 });
 
 endGameBtn.addEventListener('click', () => {
-  if (confirm('End the game and close this room? This cannot be undone.')) {
-    socket.emit('host:endGame');
-  }
+  endGameRoomCode.textContent = roomCodeDisplay.textContent;
+  endGameOverlay.classList.remove('hidden');
+});
+endGameCancelBtn.addEventListener('click', () => {
+  endGameOverlay.classList.add('hidden');
+});
+endGameConfirmBtn.addEventListener('click', () => {
+  endGameOverlay.classList.add('hidden');
+  socket.emit('host:endGame');
 });
 
 // Sent only if "Save Session Data" was on and at least one buzz happened -
