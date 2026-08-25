@@ -261,12 +261,12 @@ function hideTooltip() {
 document.querySelectorAll('[data-tip]').forEach((el) => {
   el.addEventListener('mouseenter', () => {
     clearTimeout(tooltipTimer);
-    tooltipTimer = setTimeout(() => showTooltipFor(el), 2000);
+    tooltipTimer = setTimeout(() => showTooltipFor(el), 1000);
   });
   el.addEventListener('mouseleave', hideTooltip);
   el.addEventListener('focus', () => {
     clearTimeout(tooltipTimer);
-    tooltipTimer = setTimeout(() => showTooltipFor(el), 2000);
+    tooltipTimer = setTimeout(() => showTooltipFor(el), 1000);
   });
   el.addEventListener('blur', hideTooltip);
 });

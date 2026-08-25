@@ -26,7 +26,7 @@ instead of localhost.
   Session" group (Reset Everything, End Game) — instead of one long wrapped
   row of every control.
 - **Hover tooltips on every host control**: hovering (or focusing via
-  keyboard) any selection or button on the host dashboard for about 2 seconds
+  keyboard) any selection or button on the host dashboard for about 1 second
   shows a short explanation of what it does before you click/change it.
   There's a fixed delay so the tooltips don't flash in and out as the mouse
   passes over the panel. Implemented client-side only (`data-tip` attributes
