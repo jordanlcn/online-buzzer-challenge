@@ -16,11 +16,6 @@ const saveSessionDataToggle = document.getElementById('saveSessionDataToggle');
 const armBtn = document.getElementById('armBtn');
 const resetRoundBtn = document.getElementById('resetRoundBtn');
 const resetAllBtn = document.getElementById('resetAllBtn');
-const closeRoomBtn = document.getElementById('closeRoomBtn');
-const closeRoomOverlay = document.getElementById('closeRoomOverlay');
-const closeRoomCode = document.getElementById('closeRoomCode');
-const closeRoomCancelBtn = document.getElementById('closeRoomCancelBtn');
-const closeRoomConfirmBtn = document.getElementById('closeRoomConfirmBtn');
 const endGameBtn = document.getElementById('endGameBtn');
 const endGameOverlay = document.getElementById('endGameOverlay');
 const endGameRoomCode = document.getElementById('endGameRoomCode');
@@ -126,18 +121,6 @@ resetAllBtn.addEventListener('click', () => {
     socket.emit('host:resetAll');
   }
 });
-closeRoomBtn.addEventListener('click', () => {
-  closeRoomCode.textContent = roomCodeDisplay.textContent;
-  closeRoomOverlay.classList.remove('hidden');
-});
-closeRoomCancelBtn.addEventListener('click', () => {
-  closeRoomOverlay.classList.add('hidden');
-});
-closeRoomConfirmBtn.addEventListener('click', () => {
-  closeRoomOverlay.classList.add('hidden');
-  socket.emit('host:closeRoom');
-});
-
 endGameBtn.addEventListener('click', () => {
   endGameRoomCode.textContent = roomCodeDisplay.textContent;
   endGameOverlay.classList.remove('hidden');

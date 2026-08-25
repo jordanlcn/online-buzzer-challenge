@@ -73,7 +73,6 @@
         <h3 class="control-group-title">End Session</h3>
         <div class="control-row">
           <button id="resetAllBtn" class="btn btn-danger" data-tip="Wipes the leaderboard and all round data. Does NOT close the room or disconnect players.">Reset Everything</button>
-          <button id="closeRoomBtn" class="btn btn-danger" data-tip="Disconnects every player immediately and creates a brand-new room with a new code. Asks for confirmation first.">Close Room</button>
           <button id="endGameBtn" class="btn btn-danger" data-tip="Ends the game: disconnects everyone, offers a CSV download if Save Session Data is on, then creates a new room. Asks for confirmation first.">End Game</button>
         </div>
       </section>
@@ -109,33 +108,15 @@
     </div>
   </main>
 
-  <div id="closeRoomOverlay" class="overlay hidden">
-    <div class="confirm-card">
-      <h2>Close this room?</h2>
-      <p class="confirm-lead">This will immediately:</p>
-      <ul class="confirm-list">
-        <li>Disconnect every player currently in the room</li>
-        <li>Deactivate room code <strong id="closeRoomCode">------</strong> — it will stop working</li>
-        <li>End the round in progress, if any, discarding its buzz order</li>
-        <li>Permanently erase this room's leaderboard and stats</li>
-        <li>Create a brand-new room with a new code right after, for you to share again</li>
-      </ul>
-      <p class="confirm-warning">This cannot be undone.</p>
-      <div class="confirm-actions">
-        <button id="closeRoomCancelBtn" class="btn">Cancel</button>
-        <button id="closeRoomConfirmBtn" class="btn btn-danger">Close Room</button>
-      </div>
-    </div>
-  </div>
-
   <div id="endGameOverlay" class="overlay hidden">
     <div class="confirm-card">
       <h2>End this game?</h2>
       <p class="confirm-lead">This will immediately:</p>
       <ul class="confirm-list">
-        <li>End the round in progress, if any</li>
+        <li>End the round in progress, if any, discarding its buzz order</li>
         <li>Disconnect every player currently in the room</li>
         <li>Deactivate room code <strong id="endGameRoomCode">------</strong> — it will stop working</li>
+        <li>Permanently erase this room's leaderboard and stats</li>
         <li>If <strong>Save Session Data</strong> is on: show a prompt to download a CSV of every buzz and answer from this session</li>
         <li>If <strong>Save Session Data</strong> is off: nothing from this session is saved anywhere</li>
         <li>Create a brand-new room with a new code right after, for you to share again</li>

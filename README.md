@@ -23,8 +23,8 @@ instead of localhost.
 - **Host dashboard controls are grouped**: Round Settings (Difficulty, Math
   Challenge, Time Limit), Player Options (Show Live Stats, Save Session
   Data), Round Controls (Start/Next Round, Reset Round), and a bordered "End
-  Session" group (Reset Everything, Close Room, End Game) — instead of one
-  long wrapped row of every control.
+  Session" group (Reset Everything, End Game) — instead of one long wrapped
+  row of every control.
 - **Hover tooltips on every host control**: hovering (or focusing via
   keyboard) any selection or button on the host dashboard for about 2 seconds
   shows a short explanation of what it does before you click/change it.
@@ -175,18 +175,18 @@ instead of localhost.
   - *Reset Round* — clears the current round's queue without re-arming.
   - *Reset Everything* — wipes the leaderboard and all round data (asks for
     confirmation first).
-  - *Close Room* — ends the game on demand: every connected player is
-    disconnected immediately with a "host closed the room" alert, and the
-    host's dashboard spins up a brand-new room/code right away. Clicking it
-    opens a confirmation dialog that spells out every consequence (players
-    disconnected, the current code deactivated, the in-progress round and its
-    buzz order discarded, this room's leaderboard permanently erased, a fresh
-    room created immediately after) before anything actually happens.
-  - *End Game* — the same underlying close as *Close Room*, plus a session
-    export step: see "Save Session Data" below. Also opens its own
-    confirmation dialog first, spelling out exactly what will happen
-    (including whether a CSV prompt is coming, based on whether Save Session
-    Data is on) before anything actually happens.
+  - *End Game* — ends the game on demand: every connected player is
+    disconnected immediately with a "host closed the room" alert, the
+    current code is deactivated, this room's leaderboard is permanently
+    erased, and the host's dashboard spins up a brand-new room/code right
+    away — plus a session export step: see "Save Session Data" below.
+    Clicking it opens a confirmation dialog that spells out every
+    consequence (including whether a CSV prompt is coming, based on whether
+    Save Session Data is on) before anything actually happens. This single
+    button replaced the earlier separate *Close Room* / *End Game* buttons,
+    since the only real difference between them was the CSV step — folding
+    that into one button means a host relying on session recording can no
+    longer accidentally lose it by clicking the "wrong" close button.
 - **"Save Session Data" toggle + "End Game" button** (host dashboard): off by
   default. When switched on, every buzz and answer from that point forward —
   across every round, not just the current one — is appended to a per-room

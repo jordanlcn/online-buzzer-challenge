@@ -623,15 +623,9 @@ io.on('connection', (socket) => {
 
   // Lets the host end the game on demand (e.g. "that's a wrap") instead of
   // only ever closing via a dropped connection or the inactivity sweep.
-  safeOn(socket, 'host:closeRoom', () => {
-    const room = getHostRoom(socket);
-    if (!room) return;
-    closeRoom(room.sessionId, 'host_closed');
-  });
-
-  // Deliberate "we're done" action: flushes whatever's left of the current
-  // round into the session log, hands the host a CSV of the whole session if
-  // they had recording switched on at any point, then closes the room.
+  // Flushes whatever's left of the current round into the session log,
+  // hands the host a CSV of the whole session if they had recording
+  // switched on at any point, then closes the room.
   safeOn(socket, 'host:endGame', () => {
     const room = getHostRoom(socket);
     if (!room) return;
