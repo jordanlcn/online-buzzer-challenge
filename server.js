@@ -140,9 +140,11 @@ function connectedPlayersList(room) {
   return [...room.players.values()].map((p) => p.name).sort((a, b) => a.localeCompare(b));
 }
 
-// Shared by both the host dashboard and every player's own page: each buzzer
-// gets their own independently-random equation, so showing everyone's
-// equation/answer doesn't help anyone game a future question.
+// Shared by both the host dashboard and every player's own page. Note: every
+// buzzer in a round gets the SAME equation (see clearRound), so once one
+// person's answer is resolved and visible here, anyone else still solving
+// can read it off this table - that's an accepted tradeoff of a shared
+// question, not a bug.
 function queueDetail(room) {
   const first = room.round.queue[0];
   const baseTime = first ? first.serverTime : null;
@@ -197,16 +199,22 @@ function broadcastState(room) {
 // round itself locks in whatever they were at the moment it started
 // (arm / reset), so a mid-round change never retroactively affects equations
 // already handed out - it only takes effect from the NEXT round onward.
+//
+// Every buzzer in the round is handed this same equation - one question per
+// round, not one per buzz - generated fresh right here so a new round always
+// gets a new problem.
 function clearRound(room) {
   room.round.queue.forEach((entry) => {
     if (entry.timer) clearTimeout(entry.timer);
   });
+  const difficulty = room.difficulty;
   room.round = {
     armed: room.round.armed,
     queue: [],
     winner: null,
-    difficulty: room.difficulty,
+    difficulty,
     timeLimitMs: room.timeLimitMs,
+    equation: makeEquation(difficulty),
   };
 }
 
@@ -220,7 +228,7 @@ function effectiveTimeoutMs(room) {
 
 function issueChallenge(room, entry) {
   const timeoutMs = effectiveTimeoutMs(room);
-  entry.equation = makeEquation(room.round.difficulty);
+  entry.equation = room.round.equation; // same problem for every buzzer this round
   entry.status = 'pending';
   entry.deadline = Date.now() + timeoutMs;
   const socket = io.sockets.sockets.get(entry.socketId);

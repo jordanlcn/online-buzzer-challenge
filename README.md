@@ -79,16 +79,26 @@ instead of localhost.
   source of truth keeps it fair.
 - **Low latency transport**: uses Socket.IO (WebSockets), so buzzes are pushed
   instantly instead of relying on polling.
-- **Math confirmation, given to everyone in parallel, capped at 5 correct**: every
-  buzzer gets their own equation the instant they buzz — there's no waiting in
-  line for a turn (`MAX_WINNERS_PER_ROUND` in `server.js` sets the cap, currently
-  5). Wrong answers and timeouts don't count against that target. The *first*
-  person to answer correctly is recorded as the round's winner (shown in the
-  banner and credited a win on the leaderboard). The moment the 5th correct
-  answer is posted, the buzzer disables itself immediately: anyone still
-  mid-challenge at that instant has their equation voided (marked "skipped,"
-  their timer cancelled, their answer no longer accepted even if they submit
-  one), and any brand-new buzz attempt after that point is rejected outright.
+- **Math confirmation, given to everyone in parallel, capped at 5 correct**: the
+  instant a round is armed (or reset), one equation is generated for that round
+  — every single buzzer gets that exact same problem the moment they buzz,
+  there's no waiting in line for a turn (`MAX_WINNERS_PER_ROUND` in `server.js`
+  sets the cap, currently 5). Wrong answers and timeouts don't count against
+  that target. The *first* person to answer correctly is recorded as the
+  round's winner (shown in the banner and credited a win on the leaderboard).
+  The moment the 5th correct answer is posted, the buzzer disables itself
+  immediately: anyone still mid-challenge at that instant has their equation
+  voided (marked "skipped," their timer cancelled, their answer no longer
+  accepted even if they submit one), and any brand-new buzz attempt after
+  that point is rejected outright. A new round (next arm/reset) always gets a
+  fresh equation.
+  - **Tradeoff to know about**: because everyone in a round shares the same
+    problem, the equation/answer visibility described below means anyone
+    still solving can read the correct answer off the table the moment the
+    first person's result appears. That's an accepted consequence of a shared
+    question, not a bug — if it matters for how you're running the game,
+    consider hiding the Equation/Answer columns from players, or turning off
+    Math Challenge entirely for a "who buzzes first wins" mode instead.
 - **Difficulty control** (host dashboard): pick *Easy* (both numbers single-digit,
   0-9, the default for a new room), *Medium* (each number independently single-
   or two-digit, so equations mix), or *Hardest* (both numbers two-digit, 10-99).
@@ -117,12 +127,10 @@ instead of localhost.
   Firefox and silence in Edge in earlier testing).
 - **Tracking**: both the host dashboard and every player's own page show the same
   "Live Buzz Order" table for the current round — name, milliseconds behind the
-  first buzz, the exact equation each buzzer was given, what they actually typed
-  in, and the resulting status (correct/wrong/timeout/skipped). This is safe to
-  share with players because each buzzer gets their own independently-random
-  equation (never reused), so seeing someone else's doesn't help you guess a
-  future one. The host dashboard additionally has a persistent leaderboard
-  (total buzzes, wins, misses) across rounds.
+  first buzz, the equation (same one for everyone this round), what they
+  actually typed in, and the resulting status (correct/wrong/timeout/skipped).
+  See the shared-equation tradeoff noted above. The host dashboard additionally
+  has a persistent leaderboard (total buzzes, wins, misses) across rounds.
 - **Winner row highlighted for everyone**: the round's winner - first to buzz
   AND answer correctly - gets a gold highlight with a 🏆 in their row of the
   Live Buzz Order table, on both the host dashboard and every player's own
